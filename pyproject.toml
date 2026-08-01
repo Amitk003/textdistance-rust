@@ -22,3 +22,15 @@ python-source = "python"
 module-name = "textdistance._textdistance"
 manifest-path = "crates/pyapi/Cargo.toml"
 features = ["extension-module"]
+
+[tool.pytest.ini_options]
+norecursedirs = [
+    "reference",
+    ".venv",
+    "target",
+    ".hypothesis",
+    ".pytest_cache",
+    "memory",
+    "bench",
+    "fuzz",
+]
