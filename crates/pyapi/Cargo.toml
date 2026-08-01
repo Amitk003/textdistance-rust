@@ -1,0 +1,19 @@
+[package]
+name = "pyapi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "PyO3 extension module exposing the tdcore kernels to Python."
+
+[lib]
+name = "_textdistance"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { workspace = true }
+tdcore = { path = "../tdcore" }
+
+[features]
+# Enabled by maturin when building the extension for Python. Kept out of the
+# default feature set so `cargo build` and `cargo test` link cleanly without it.
+extension-module = ["pyo3/extension-module"]

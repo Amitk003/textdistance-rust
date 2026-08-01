@@ -1,0 +1,17 @@
+# Normalize line endings: text files as LF in the index, auto detection on checkout.
+* text=auto
+
+# Docs and code: keep LF in the repository on every platform.
+*.md text eol=lf
+*.ps1 text eol=crlf
+*.sh text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.py text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Original test suite must stay byte-identical to upstream on every checkout.
+tests/original/** text eol=lf
