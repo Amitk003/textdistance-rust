@@ -6,11 +6,12 @@ the original Python class API intact so existing code and the original test
 suite run unmodified.
 """
 
-from . import _textdistance
-
-__version__ = _textdistance.__version__
+# main package info
+__title__ = 'TextDistance'
+__version__ = '4.6.2'
 VERSION = __version__
 
-__title__ = "TextDistance"
 
-__all__ = []
+# app
+from .algorithms import *  # noQA
+from .utils import *  # noQA
