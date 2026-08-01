@@ -36,6 +36,33 @@ fn seq_to_chars(seq: &Bound<'_, PyAny>) -> PyResult<Vec<char>> {
     Ok(s.chars().collect())
 }
 
+/// Extract a Python str as a sequence of Unicode code points, including lone
+/// surrogates, which is how Python itself models strings (surrogates are
+/// valid one-element code points). Fast path is UTF-8 extraction; when that
+/// fails (a lone surrogate is present), the code points are taken through
+/// Python semantics via `list(map(ord, data))`.
+fn seq_to_codepoints(seq: &Bound<'_, PyAny>) -> PyResult<Vec<u32>> {
+    if let Ok(s) = seq.extract::<String>() {
+        return Ok(s.chars().map(|c| c as u32).collect());
+    }
+    let py = seq.py();
+    let builtins = py.import("builtins")?;
+    let ord_ = builtins.getattr("ord")?;
+    let mapped = builtins.getattr("map")?.call1((ord_, seq))?;
+    let as_list = builtins.getattr("list")?.call1((mapped,))?;
+    as_list.extract::<Vec<u32>>()
+}
+
+/// Require a single-character Python str and return its code point.
+fn single_codepoint(value: &Bound<'_, PyAny>) -> PyResult<u32> {
+    match seq_to_codepoints(value)?.as_slice() {
+        [cp] => Ok(*cp),
+        _ => Err(pyo3::exceptions::PyValueError::new_err(
+            "terminator must be a single character",
+        )),
+    }
+}
+
 type BoolPred<'a> = Box<dyn Fn(&Py<PyAny>, &Py<PyAny>) -> bool + 'a>;
 type ColPred<'a> = Box<dyn Fn(&[Option<&Py<PyAny>>]) -> bool + 'a>;
 type FloatSim<'a> = Box<dyn Fn(&Py<PyAny>, &Py<PyAny>) -> f64 + 'a>;
@@ -709,32 +736,47 @@ fn token_stats(counters: &Bound<'_, PyAny>, as_set: bool) -> PyResult<(f64, f64,
 /// Arithmetic coding of a string, returning the exact encoded fraction as
 /// `(numerator, denominator)`, mirroring `ArithNCD._compress`.
 #[pyfunction]
-fn arith_compress(data: &str, terminator: Option<&str>) -> (BigInt, BigInt) {
-    compression::arith_compress(data, terminator)
+fn arith_compress(
+    data: &Bound<'_, PyAny>,
+    terminator: Option<&Bound<'_, PyAny>>,
+) -> PyResult<(BigInt, BigInt)> {
+    let cp = seq_to_codepoints(data)?;
+    let term = match terminator {
+        None => None,
+        Some(t) => Some(single_codepoint(t)?),
+    };
+    Ok(compression::arith_compress(&cp, term))
 }
 
 /// Run-length encoding over characters, mirroring `RLENCD._compress`.
+/// Returns the encoded code points; the adapter joins them into a str.
 #[pyfunction]
-fn rle(data: &str) -> String {
-    compression::rle(data)
+fn rle(data: &Bound<'_, PyAny>) -> PyResult<Vec<u32>> {
+    let cp = seq_to_codepoints(data)?;
+    Ok(compression::rle(&cp))
 }
 
 /// Burrows-Wheeler transform over characters, mirroring `BWTRLENCD._compress`.
+/// Returns the transformed code points; the adapter joins them into a str.
 #[pyfunction]
-fn bwt(data: &str, terminator: &str) -> String {
-    compression::bwt(data, terminator)
+fn bwt(data: &Bound<'_, PyAny>, terminator: &Bound<'_, PyAny>) -> PyResult<Vec<u32>> {
+    let cp = seq_to_codepoints(data)?;
+    let term = single_codepoint(terminator)?;
+    Ok(compression::bwt(&cp, term))
 }
 
 /// Sum of square roots of per-element counts, mirroring `SqrtNCD._get_size`.
 #[pyfunction]
-fn sqrt_size(data: &str) -> f64 {
-    compression::sqrt_size(data)
+fn sqrt_size(data: &Bound<'_, PyAny>) -> PyResult<f64> {
+    let cp = seq_to_codepoints(data)?;
+    Ok(compression::sqrt_size(&cp))
 }
 
 /// Shannon entropy of per-element counts, mirroring `EntropyNCD._compress`.
 #[pyfunction]
-fn entropy(data: &str, base: f64) -> f64 {
-    compression::entropy(data, base)
+fn entropy(data: &Bound<'_, PyAny>, base: f64) -> PyResult<f64> {
+    let cp = seq_to_codepoints(data)?;
+    Ok(compression::entropy(&cp, base))
 }
 
 /// bzip2-compressed bytes with the 15-byte header dropped, mirroring

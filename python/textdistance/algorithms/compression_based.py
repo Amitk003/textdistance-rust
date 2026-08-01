@@ -128,7 +128,7 @@ class RLENCD(_NCDBase):
     """
 
     def _compress(self, data: Sequence) -> str:
-        return _textdistance.rle(data)
+        return ''.join(map(chr, _textdistance.rle(data)))
 
 
 class BWTRLENCD(RLENCD):
@@ -141,7 +141,7 @@ class BWTRLENCD(RLENCD):
         self.terminator: Any = terminator
 
     def _compress(self, data: str) -> str:
-        return super()._compress(_textdistance.bwt(data, self.terminator))
+        return super()._compress(''.join(map(chr, _textdistance.bwt(data, self.terminator))))
 
 
 # -- NORMAL COMPRESSORS -- #

@@ -61,9 +61,8 @@ impl PartialOrd for Frac {
 
 /// Order characters by their count, descending, ties by first occurrence,
 /// matching Python's `collections.Counter.most_common()` (a stable sort).
-fn most_common(counts: &HashMap<String, u64>, order: &[String]) -> Vec<(String, u64)> {
-    let mut items: Vec<(String, u64)> =
-        order.iter().map(|key| (key.clone(), counts[key])).collect();
+fn most_common(counts: &HashMap<u32, u64>, order: &[u32]) -> Vec<(u32, u64)> {
+    let mut items: Vec<(u32, u64)> = order.iter().map(|key| (*key, counts[key])).collect();
     items.sort_by_key(|b| std::cmp::Reverse(b.1));
     items
 }
@@ -71,27 +70,28 @@ fn most_common(counts: &HashMap<String, u64>, order: &[String]) -> Vec<(String, 
 /// Arithmetic coding of `data` over its own per-character probabilities,
 /// returning the exact reduced fraction, mirroring `ArithNCD._compress`.
 ///
-/// Returns `(numerator, denominator)` of the encoded fraction.
-pub fn arith_compress(data: &str, terminator: Option<&str>) -> (BigInt, BigInt) {
-    let mut counts: HashMap<String, u64> = HashMap::new();
-    let mut order: Vec<String> = Vec::new();
-    for ch in data.chars() {
-        let key = ch.to_string();
-        if !counts.contains_key(&key) {
-            order.push(key.clone());
+/// `data` is a sequence of Unicode code points (Python's string model, which
+/// also holds lone surrogates). Returns `(numerator, denominator)` of the
+/// encoded fraction.
+pub fn arith_compress(data: &[u32], terminator: Option<u32>) -> (BigInt, BigInt) {
+    let mut counts: HashMap<u32, u64> = HashMap::new();
+    let mut order: Vec<u32> = Vec::new();
+    for &ch in data {
+        if !counts.contains_key(&ch) {
+            order.push(ch);
         }
-        *counts.entry(key).or_insert(0) += 1;
+        *counts.entry(ch).or_insert(0) += 1;
     }
     if let Some(t) = terminator {
-        if !counts.contains_key(t) {
-            order.push(t.to_string());
+        if !counts.contains_key(&t) {
+            order.push(t);
         }
-        counts.insert(t.to_string(), 1);
+        counts.insert(t, 1);
     }
 
     let total = BigUint::from(counts.values().sum::<u64>());
     let mut cum = BigUint::from(0u8);
-    let mut probs: Vec<(String, Frac, Frac)> = Vec::new();
+    let mut probs: Vec<(u32, Frac, Frac)> = Vec::new();
     for (key, count) in most_common(&counts, &order) {
         let count = BigUint::from(count);
         probs.push((
@@ -102,14 +102,15 @@ pub fn arith_compress(data: &str, terminator: Option<&str>) -> (BigInt, BigInt) 
         cum += count;
     }
 
-    let data2: String;
-    let data_ref: &str = match terminator {
+    let mut data2: Vec<u32>;
+    let data_ref: &[u32] = match terminator {
         Some(t) => {
-            data2 = if data.contains(t) {
-                data.replace(t, "")
+            data2 = if data.contains(&t) {
+                data.iter().copied().filter(|&ch| ch != t).collect()
             } else {
-                data.to_string()
-            } + t;
+                data.to_vec()
+            };
+            data2.push(t);
             &data2
         }
         None => data,
@@ -117,10 +118,10 @@ pub fn arith_compress(data: &str, terminator: Option<&str>) -> (BigInt, BigInt) 
 
     let mut start = Frac::zero();
     let mut width = Frac::one();
-    let prob_map: HashMap<&str, (&Frac, &Frac)> =
-        probs.iter().map(|(k, s, w)| (k.as_str(), (s, w))).collect();
-    for ch in data_ref.chars() {
-        let (prob_start, prob_width) = prob_map[ch.to_string().as_str()];
+    let prob_map: HashMap<u32, (&Frac, &Frac)> =
+        probs.iter().map(|(k, s, w)| (*k, (s, w))).collect();
+    for &ch in data_ref {
+        let (prob_start, prob_width) = prob_map[&ch];
         start = start.add(&prob_start.mul(&width));
         width = width.mul(prob_width);
     }
@@ -145,14 +146,16 @@ pub fn arith_compress(data: &str, terminator: Option<&str>) -> (BigInt, BigInt) 
 }
 
 /// Run-length encoding over characters, mirroring `RLENCD._compress`.
-pub fn rle(data: &str) -> String {
-    let mut out = String::new();
-    let mut chars = data.chars();
-    let mut current = chars.next();
+/// Operates on code points and returns the encoded code points (the count
+/// digits are ASCII code points).
+pub fn rle(data: &[u32]) -> Vec<u32> {
+    let mut out: Vec<u32> = Vec::new();
+    let mut iter = data.iter().copied();
+    let mut current = iter.next();
     while let Some(ch) = current {
         let mut n: u64 = 1;
         loop {
-            match chars.next() {
+            match iter.next() {
                 Some(next) if next == ch => n += 1,
                 Some(next) => {
                     current = Some(next);
@@ -165,7 +168,7 @@ pub fn rle(data: &str) -> String {
             }
         }
         if n > 2 {
-            out.push_str(&n.to_string());
+            out.extend(n.to_string().bytes().map(|b| b as u32));
             out.push(ch);
         } else if n == 1 {
             out.push(ch);
@@ -179,23 +182,24 @@ pub fn rle(data: &str) -> String {
 
 /// Burrows-Wheeler transform over characters, mirroring `BWTRLENCD._compress`.
 ///
-/// Appends `terminator` when absent, sorts every rotation, and returns the
-/// last character of each rotation.
-pub fn bwt(data: &str, terminator: &str) -> String {
+/// Appends `terminator` when absent, sorts every rotation by code point (the
+/// same order as Python string comparison), and returns the last character of
+/// each rotation as a code point sequence.
+pub fn bwt(data: &[u32], terminator: u32) -> Vec<u32> {
     if data.is_empty() {
-        return terminator.to_string();
+        return vec![terminator];
     }
-    if data.contains(terminator) {
-        return data.to_string();
+    if data.contains(&terminator) {
+        return data.to_vec();
     }
-    let data2: String = format!("{data}{terminator}");
-    let chars: Vec<char> = data2.chars().collect();
-    let n = chars.len();
-    let mut rotations: Vec<Vec<char>> = Vec::with_capacity(n);
+    let mut data2: Vec<u32> = data.to_vec();
+    data2.push(terminator);
+    let n = data2.len();
+    let mut rotations: Vec<Vec<u32>> = Vec::with_capacity(n);
     for i in 0..n {
         let mut rotation = Vec::with_capacity(n);
-        rotation.extend_from_slice(&chars[i..]);
-        rotation.extend_from_slice(&chars[..i]);
+        rotation.extend_from_slice(&data2[i..]);
+        rotation.extend_from_slice(&data2[..i]);
         rotations.push(rotation);
     }
     rotations.sort();
@@ -205,10 +209,10 @@ pub fn bwt(data: &str, terminator: &str) -> String {
 /// Sum of square roots of the per-element counts, mirroring
 /// `SqrtNCD._get_size`. Iteration order is first occurrence, matching the
 /// insertion order of a Python `Counter` (which drives `sum()` upstream).
-pub fn sqrt_size(data: &str) -> f64 {
-    let mut counts: HashMap<char, u64> = HashMap::new();
-    let mut order: Vec<char> = Vec::new();
-    for ch in data.chars() {
+pub fn sqrt_size(data: &[u32]) -> f64 {
+    let mut counts: HashMap<u32, u64> = HashMap::new();
+    let mut order: Vec<u32> = Vec::new();
+    for &ch in data {
         if !counts.contains_key(&ch) {
             order.push(ch);
         }
@@ -226,14 +230,14 @@ pub fn sqrt_size(data: &str) -> f64 {
 /// `base` is the log base. Accumulation follows Python's operation order
 /// (`p * (ln(p) / ln(base))`, summed over first-occurrence order) so the
 /// result is bit-identical to the reference.
-pub fn entropy(data: &str, base: f64) -> f64 {
-    let total_count = data.chars().count();
+pub fn entropy(data: &[u32], base: f64) -> f64 {
+    let total_count = data.len();
     if total_count == 0 {
         return 0.0;
     }
-    let mut counts: HashMap<char, u64> = HashMap::new();
-    let mut order: Vec<char> = Vec::new();
-    for ch in data.chars() {
+    let mut counts: HashMap<u32, u64> = HashMap::new();
+    let mut order: Vec<u32> = Vec::new();
+    for &ch in data {
         if !counts.contains_key(&ch) {
             order.push(ch);
         }
@@ -252,8 +256,12 @@ pub fn entropy(data: &str, base: f64) -> f64 {
 mod tests {
     use super::*;
 
+    fn cp(s: &str) -> Vec<u32> {
+        s.chars().map(|c| c as u32).collect()
+    }
+
     fn frac(s: &str) -> (BigInt, BigInt) {
-        arith_compress(s, None)
+        arith_compress(&cp(s), None)
     }
 
     #[test]
@@ -264,62 +272,64 @@ mod tests {
 
     #[test]
     fn arith_banana_terminator_matches_reference() {
-        let (n, d) = arith_compress("BANANA", Some("\u{0}"));
+        let (n, d) = arith_compress(&cp("BANANA"), Some('\u{0}' as u32));
         assert_eq!(n, BigInt::from(1525u32));
         assert_eq!(d, BigInt::from(2048u32));
     }
 
     #[test]
     fn arith_banana_plain_matches_reference() {
-        let (n, d) = arith_compress("BANANA", None);
+        let (n, d) = arith_compress(&cp("BANANA"), None);
         assert_eq!(n, BigInt::from(113u32));
         assert_eq!(d, BigInt::from(128u32));
     }
 
     #[test]
     fn arith_terminator_removed_then_readded() {
-        let (n, d) = arith_compress("A\u{0}A", Some("\u{0}"));
+        let t = Some('\u{0}' as u32);
+        let (n, d) = arith_compress(&cp("A\u{0}A"), t);
         // data becomes "A\u{0}" after removal and re-append.
-        let (n2, d2) = arith_compress("AA", Some("\u{0}"));
+        let (n2, d2) = arith_compress(&cp("AA"), t);
         assert_eq!((n, d), (n2, d2));
     }
 
     #[test]
     fn rle_runs() {
-        assert_eq!(rle("aaabbbbc"), "3a4bc");
-        assert_eq!(rle("abc"), "abc");
-        assert_eq!(rle("aabbcc"), "aabbcc");
-        assert_eq!(rle(""), "");
-        assert_eq!(rle("aaaaaaaaaa"), "10a");
+        assert_eq!(rle(&cp("aaabbbbc")), cp("3a4bc"));
+        assert_eq!(rle(&cp("abc")), cp("abc"));
+        assert_eq!(rle(&cp("aabbcc")), cp("aabbcc"));
+        assert_eq!(rle(&[]), vec![]);
+        assert_eq!(rle(&cp("aaaaaaaaaa")), cp("10a"));
     }
 
     #[test]
     fn bwt_transforms() {
-        assert_eq!(bwt("test", "\u{0}"), "ttes\u{0}");
-        assert_eq!(bwt("banana", "\u{0}"), "annb\u{0}aa");
-        assert_eq!(bwt("", "\u{0}"), "\u{0}");
-        assert_eq!(bwt("a\u{0}b", "\u{0}"), "a\u{0}b");
+        let t = '\u{0}' as u32;
+        assert_eq!(bwt(&cp("test"), t), cp("ttes\u{0}"));
+        assert_eq!(bwt(&cp("banana"), t), cp("annb\u{0}aa"));
+        assert_eq!(bwt(&[], t), vec![t]);
+        assert_eq!(bwt(&cp("a\u{0}b"), t), cp("a\u{0}b"));
     }
 
     #[test]
     fn sqrt_size_matches_reference() {
-        assert_eq!(sqrt_size("test"), 3.414213562373095);
-        assert_eq!(sqrt_size(""), 0.0);
-        assert_eq!(sqrt_size("aaaa"), 2.0);
+        assert_eq!(sqrt_size(&cp("test")), 3.414213562373095);
+        assert_eq!(sqrt_size(&[]), 0.0);
+        assert_eq!(sqrt_size(&cp("aaaa")), 2.0);
     }
 
     #[test]
     fn entropy_matches_reference() {
-        assert_eq!(entropy("test", 2.0), 1.5);
-        assert_eq!(entropy("aaa", 2.0), 0.0);
-        assert_eq!(entropy("", 2.0), 0.0);
+        assert_eq!(entropy(&cp("test"), 2.0), 1.5);
+        assert_eq!(entropy(&cp("aaa"), 2.0), 0.0);
+        assert_eq!(entropy(&[], 2.0), 0.0);
     }
 
     #[test]
     fn entropy_base_changes_scale() {
         // entropy with base b equals (-sum p ln p) / ln(b).
-        let log2 = entropy("test", 2.0);
-        let log10 = entropy("test", 10.0);
+        let log2 = entropy(&cp("test"), 2.0);
+        let log10 = entropy(&cp("test"), 10.0);
         assert!((log10 * 10.0_f64.ln() - log2 * 2.0_f64.ln()).abs() < 1e-12);
     }
 }
