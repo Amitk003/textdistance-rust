@@ -1,0 +1,4 @@
+{
+  "final_long_run": {"mode": "long", "seed": 20260801, "duration_s": 65},
+  "final_std_run": {"mode": "std", "seed": 20260801, "duration_s": 75}
+}
