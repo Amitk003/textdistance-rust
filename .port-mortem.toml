@@ -1,0 +1,10 @@
+track = "D"
+source = "https://github.com/life4/textdistance"
+source_commit = "d6a68d61088a40eef5c88191ccf79323dbf34850"
+source_language = "Python"
+target_language = "Rust"
+license = "MIT"
+
+[test_suite]
+command = "pytest -m 'not external' tests/original"
+manifest = "tests/original/SHA256SUMS.txt"
