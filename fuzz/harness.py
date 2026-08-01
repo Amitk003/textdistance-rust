@@ -157,6 +157,11 @@ def main():
         action="store_true",
         help="deeper mode: longer strings, list and tuple sequences, more unicode",
     )
+    parser.add_argument(
+        "--no-logs",
+        action="store_true",
+        help="do not write log/divergence files (for CI smoke runs that must not clobber committed artifacts)",
+    )
     args = parser.parse_args()
 
     mode = "long" if args.long else "std"
@@ -246,12 +251,31 @@ def main():
 
     elapsed = time.time() - start
 
-    with open(divergences_path, "w", encoding="utf8") as f:
-        f.write(f"divergences: {len(divergences)}\n")
-        for case, detail, kind in divergences[:200]:
-            f.write(json.dumps({"kind": kind, "case": case, "detail": detail}) + "\n")
+    if not args.no_logs:
+        with open(divergences_path, "w", encoding="utf8") as f:
+            f.write(f"divergences: {len(divergences)}\n")
+            for case, detail, kind in divergences[:200]:
+                f.write(json.dumps({"kind": kind, "case": case, "detail": detail}) + "\n")
 
-    summary = (
+        summary = (
+            "differential fuzz run\n"
+            f"mode: {mode}\n"
+            f"seed: {args.seed}\n"
+            f"duration: {elapsed:.1f}s (requested {args.duration}s)\n"
+            f"cases: {cases_run}\n"
+            f"divergences: {len(divergences)}\n"
+            f"near_misses_within_1e-9: {len(near_misses)}\n"
+            f"algorithms: {len(ALGORITHMS)}\n"
+            f"tolerance: {TOLERANCE}\n"
+        )
+        with open(log_path, "w", encoding="utf8") as f:
+            f.write(summary)
+            if divergences:
+                f.write("first divergences:\n")
+                for case, detail, kind in divergences[:10]:
+                    f.write(json.dumps({"kind": kind, "case": case, "detail": detail}) + "\n")
+
+    print(
         "differential fuzz run\n"
         f"mode: {mode}\n"
         f"seed: {args.seed}\n"
@@ -262,14 +286,6 @@ def main():
         f"algorithms: {len(ALGORITHMS)}\n"
         f"tolerance: {TOLERANCE}\n"
     )
-    with open(log_path, "w", encoding="utf8") as f:
-        f.write(summary)
-        if divergences:
-            f.write("first divergences:\n")
-            for case, detail, kind in divergences[:10]:
-                f.write(json.dumps({"kind": kind, "case": case, "detail": detail}) + "\n")
-
-    print(summary)
     if divergences:
         print(f"divergences found: {len(divergences)}, see {divergences_path}")
         sys.exit(1)

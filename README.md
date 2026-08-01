@@ -1,5 +1,7 @@
 # textdistance (native port)
 
+[![CI](https://github.com/Amitk003/textdistance-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/Amitk003/textdistance-rust/actions/workflows/ci.yml)
+
 The same `textdistance` you know, with a native Rust core underneath.
 
 30+ string distance and similarity algorithms (Levenshtein, Jaro, Jaccard, LCS, NCD and more)
