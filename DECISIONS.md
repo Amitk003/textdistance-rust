@@ -151,11 +151,14 @@ equivalence claim byte for byte.
 ## D14. Safety boundary
 
 `crates/tdcore` is compiled with `#![forbid(unsafe_code)]`. All `unsafe` in the project is
-confined to the PyO3 FFI crate and is only that which the PyO3 API itself requires.
+confined to two small crates: the PyO3 FFI (`crates/pyapi`) and the C-compression bindings
+(`crates/codec`), each `unsafe` block carrying a SAFETY comment.
 
 Rationale: the core is where correctness lives and where a memory error would be a port bug.
 Keeping it mechanically unsafe-free is a checkable property, and it keeps the FFI surface
-small and auditable.
+small and auditable. The compression crates are the single exception: they call the same C
+libraries as CPython so that compressed lengths match bit for bit, and no unsafe escapes
+into `tdcore`.
 
 ## D15. Benchmark scope is declared up front
 
@@ -166,3 +169,35 @@ produced it.
 Rationale: throughput-only numbers are easy to make look good and easy to distrust. The
 behavioral claims come first; performance numbers are reported with their distribution and
 their measurement method, including cases where the port is slower than the original.
+
+## D16. The surface parity claim is a test, not a note
+
+`tests/port/test_surface.py` pins the exact public name sets of `textdistance` and
+`textdistance.utils`, captured from the pinned upstream release, and asserts the port
+exposes the same names and `__version__`.
+
+Rationale: surface parity was previously only documented. Making it an executable test means
+any future edit that adds, removes, or renames an exported name fails CI instead of silently
+drifting from the original API.
+
+## D17. Draft and untested upstream modules are not ported
+
+Upstream ships `textdistance/algorithms/vector_based.py` (Chebyshev, Minkowski, Euclidean,
+and friends) but it is explicitly marked as a draft, is not imported by
+`textdistance/algorithms/__init__.py`, requires numpy, and is not exercised by any test.
+
+Rationale: the port targets the public surface and the original pure suite. Shipping a
+verbatim draft module whose classes raise `NotImplementedError` by design would add dead
+code without adding provable behavior. The module is documented as an intentional omission
+here rather than silently dropped.
+
+## D18. External-library speed registry is not bundled
+
+Upstream `libraries.py` reads `libraries.json` in `optimize()` to sort third-party
+implementations of an algorithm by speed. The port keeps the `LibrariesManager` API
+(`register`, `get_libs`, `clone`) but makes `optimize()` a no-op and does not ship the json.
+
+Rationale: the port does not bundle pyxdameraulevenshtein, jellyfish, rapidfuzz, or the
+other external providers, so there is nothing to load or reorder. Keeping the manager API
+preserves compatibility for downstream code that registers libraries; optimizing an empty
+registry would only add a broken file read.
