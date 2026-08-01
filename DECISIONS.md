@@ -150,13 +150,14 @@ equivalence claim byte for byte.
 
 ## D14. Safety boundary
 
-`crates/tdcore` is compiled with `#![forbid(unsafe_code)]`. All `unsafe` in the project is
-confined to two small crates: the PyO3 FFI (`crates/pyapi`) and the C-compression bindings
-(`crates/codec`), each `unsafe` block carrying a SAFETY comment.
+`crates/tdcore` is compiled with `#![forbid(unsafe_code)]`, and `crates/pyapi` (the PyO3
+layer) is written without any `unsafe` block. All `unsafe` in the project is confined to one
+small crate: the C-compression bindings (`crates/codec`), each `unsafe` block carrying a
+SAFETY comment.
 
 Rationale: the core is where correctness lives and where a memory error would be a port bug.
 Keeping it mechanically unsafe-free is a checkable property, and it keeps the FFI surface
-small and auditable. The compression crates are the single exception: they call the same C
+small and auditable. The compression crate is the single exception: it calls the same C
 libraries as CPython so that compressed lengths match bit for bit, and no unsafe escapes
 into `tdcore`.
 
@@ -214,3 +215,23 @@ both compute bit-identical output (1.0118632). The upstream project has the same
 excludes `lzma_ncd` from CI as "too slow, makes CI flaky". The deadline is an anti-hang guard,
 not a correctness assertion, so relaxing it does not weaken what the tests verify. This makes
 the port's suite deterministic on this class of tests instead of flaky.
+
+## D20. Strings are processed as Python code points
+
+Python strings are sequences of code points, and a lone surrogate (U+D800..DFFF) is a valid
+one-element code point even though it is not valid Unicode text. The pure compression coders
+(arithmetic coding, RLE, BWT, sqrt, entropy) process their input as code points, so a string
+containing a lone surrogate matches the original bit for bit; the extension extracts code
+points directly (with a Python-semantics fallback when UTF-8 would reject a surrogate). The
+binary compressors (bz2, zlib, lzma) encode to UTF-8 first, exactly as the original does, so
+a lone surrogate raises `UnicodeEncodeError` on both sides. Behavior is pinned by
+`tests/port/test_surrogates.py`.
+
+Rationale: the upstream compression suite draws lone surrogates via `characters()` and
+expects the pure coders to handle them, so this is exercised behavior, not a corner. The
+edit, sequence, and phonetic kernels compare Rust `char` scalar values, which cannot hold a
+lone surrogate; such an input raises `UnicodeEncodeError` there where the original computes.
+That boundary is deliberate: lone surrogates are malformed data, no upstream test reaches
+those kernels with them (the suite's `characters()` strategies only exercise compression),
+the differential fuzz pool excludes them, and refactoring every DP kernel for invalid
+Unicode is not justified. It is documented here rather than silently accepted.

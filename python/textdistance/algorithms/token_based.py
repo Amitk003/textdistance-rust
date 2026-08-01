@@ -312,8 +312,10 @@ class Bag(_Base):
 
     def __call__(self, *sequences: Sequence) -> float:
         counters = self._get_counters(*sequences)              # sets
-        intersection = self._intersect_counters(*counters)     # set
-        return max(self._count_counters(sequence - intersection) for sequence in counters)
+        intersection, union, counts = _textdistance.token_stats(
+            counters, getattr(self, 'as_set', False),
+        )
+        return int(max(counts) - intersection)
 
 
 bag = Bag()
