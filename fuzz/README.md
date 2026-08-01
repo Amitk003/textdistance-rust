@@ -1,15 +1,23 @@
 # Differential fuzz
 
 A harness that runs the original `textdistance` and this port on identical random inputs and
-asserts identical outputs.
+asserts identical outputs. Every algorithm exported by the port is covered, including `bag`
+and `lzma_ncd` (the latter is excluded from the upstream test suite as too slow, so the
+fuzz is its only behavioral proof).
 
 Layout:
 
 - `harness.py`          the differential harness (generates inputs, runs both sides, diffs).
 - `reference_worker.py` reference side, runs in a subprocess with the original on sys.path.
-- `log.txt`             output of the latest continuous run (mode, duration, divergence count).
-- `divergences.txt`     details of any divergences from the latest run.
+- `log-std.txt`         summary of the latest standard run (short strings).
+- `log-long.txt`        summary of the latest long run (deeper strings, lists, tuples).
+- `divergences-std.txt` details of any divergences from the standard run.
+- `divergences-long.txt` details of any divergences from the long run.
 - `corpus/`             any saved seeds or interesting inputs for reproducibility.
+
+The reference checkout at `reference/textdistance` is gitignored (it is the upstream
+original, not part of the port). Restore it at the pinned commit with
+`scripts/fetch_reference.ps1` (or `.sh`).
 
 How the comparison works:
 
@@ -27,6 +35,6 @@ How the comparison works:
 Run:
 
 ```
-.venv/Scripts/python fuzz/harness.py --duration 60
-.venv/Scripts/python fuzz/harness.py --duration 60 --long
+.venv/Scripts/python fuzz/harness.py --duration 75
+.venv/Scripts/python fuzz/harness.py --duration 65 --long
 ```

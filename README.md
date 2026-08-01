@@ -16,8 +16,9 @@ heavy math runs at native speed.
   single FFI boundary hop into compiled code, not a Python loop.
 - **Verified equivalence.** The original project's own test suite (400 tests) runs unmodified
   against this port. A differential fuzz harness compares this port against the original
-  Python library over random inputs; the latest continuous runs covered 3.3 million short
-  and 1.3 million long cases with zero divergence.
+  Python library over random inputs, covering every exported algorithm (37, including `bag`
+  and `lzma_ncd`); the latest continuous runs covered 2.08 million short and 1.42 million
+  long cases with zero divergence.
 - **Safety discipline.** The core crate is compiled with `#![forbid(unsafe_code)]`. The FFI
   layer is the only place a boundary is touched, and it stays as small as possible.
 
@@ -74,7 +75,9 @@ Three layers, weakest to strongest:
    400 of 400 selected tests, with 30 deselected as `external`.
 2. **Differential fuzzing.** `fuzz/` runs the original library and this port on identical
    random inputs (text, unicode, varying `qval` and `as_set`) and asserts identical outputs.
-   See `fuzz/log.txt` for the latest continuous run.
+   Every exported algorithm is covered; see `fuzz/log-std.txt` and `fuzz/log-long.txt` for
+   the latest continuous runs. The reference checkout (gitignored) is restored at its pinned
+   commit with `scripts/fetch_reference.ps1` (or `.sh`).
 3. **Port tests.** `tests/port/` holds additional tests we wrote (native Rust unit tests plus
    adapter-level checks) covering edge cases not exercised upstream.
 
@@ -108,6 +111,7 @@ tests/original/      Upstream test suite, verbatim, hashed.
 tests/port/          Additional tests for the port.
 fuzz/                Differential fuzz harness and logs.
 bench/               Benchmark harness, methodology, and results.
+scripts/             Reference-fetch helpers (restore the pinned original for fuzz/bench).
 DECISIONS.md         Every non-trivial divergence from the original, with rationale.
 ```
 

@@ -13,10 +13,12 @@ Comparison rules:
     other is a divergence.
 
 Run:
-    .venv/Scripts/python fuzz/harness.py --duration 60 [--seed N]
+    .venv/Scripts/python fuzz/harness.py --duration 75 [--seed N]
+    .venv/Scripts/python fuzz/harness.py --duration 65 --long [--seed N]
 
-The latest run's summary is written to fuzz/log.txt and divergences to
-fuzz/divergences.txt.
+Each run's summary is written to fuzz/log-{std,long}.txt and divergences to
+fuzz/divergences-{std,long}.txt, so the committed artifacts for both modes
+survive and cover every exported algorithm.
 """
 
 import argparse
@@ -30,19 +32,22 @@ import time
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REFERENCE_PATH = os.path.join(REPO_ROOT, "reference", "textdistance")
-LOG_PATH = os.path.join(REPO_ROOT, "fuzz", "log.txt")
-DIVERGENCES_PATH = os.path.join(REPO_ROOT, "fuzz", "divergences.txt")
+LOG_PATH = os.path.join(REPO_ROOT, "fuzz", "log-{mode}.txt")
+DIVERGENCES_PATH = os.path.join(REPO_ROOT, "fuzz", "divergences-{mode}.txt")
 
 TOLERANCE = 1e-9
 
+# Every algorithm exported by the port (and by the pinned original), so the
+# differential proof covers the full surface.
 ALGORITHMS = [
-    "arith_ncd", "bwtrle_ncd", "bz2_ncd", "cosine", "damerau_levenshtein",
-    "editex", "entropy_ncd", "gotoh", "hamming", "identity", "jaccard",
-    "jaro", "jaro_winkler", "lcsseq", "lcsstr", "length", "levenshtein",
-    "matrix", "mlipns", "monge_elkan", "mra", "needleman_wunsch", "overlap",
-    "postfix", "prefix", "ratcliff_obershelp", "rle_ncd", "smith_waterman",
-    "sorensen", "sorensen_dice", "sqrt_ncd", "strcmp95", "tanimoto",
-    "tversky", "zlib_ncd",
+    "arith_ncd", "bag", "bwtrle_ncd", "bz2_ncd", "cosine",
+    "damerau_levenshtein", "editex", "entropy_ncd", "gotoh", "hamming",
+    "identity", "jaccard", "jaro", "jaro_winkler", "lcsseq", "lcsstr",
+    "length", "levenshtein", "lzma_ncd", "matrix", "mlipns", "monge_elkan",
+    "mra", "needleman_wunsch", "overlap", "postfix", "prefix",
+    "ratcliff_obershelp", "rle_ncd", "smith_waterman", "sorensen",
+    "sorensen_dice", "sqrt_ncd", "strcmp95", "tanimoto", "tversky",
+    "zlib_ncd",
 ]
 
 ASCII = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,"
@@ -154,9 +159,12 @@ def main():
     )
     args = parser.parse_args()
 
+    mode = "long" if args.long else "std"
+    log_path = LOG_PATH.format(mode=mode)
+    divergences_path = DIVERGENCES_PATH.format(mode=mode)
     rng = random.Random(args.seed)
     gen_case = random_case_deep if args.long else random_case
-    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     if not os.path.isdir(REFERENCE_PATH):
         print("reference checkout not found at", REFERENCE_PATH)
@@ -238,14 +246,14 @@ def main():
 
     elapsed = time.time() - start
 
-    with open(DIVERGENCES_PATH, "w", encoding="utf8") as f:
+    with open(divergences_path, "w", encoding="utf8") as f:
         f.write(f"divergences: {len(divergences)}\n")
         for case, detail, kind in divergences[:200]:
             f.write(json.dumps({"kind": kind, "case": case, "detail": detail}) + "\n")
 
     summary = (
         "differential fuzz run\n"
-        f"mode: {'long' if args.long else 'std'}\n"
+        f"mode: {mode}\n"
         f"seed: {args.seed}\n"
         f"duration: {elapsed:.1f}s (requested {args.duration}s)\n"
         f"cases: {cases_run}\n"
@@ -254,7 +262,7 @@ def main():
         f"algorithms: {len(ALGORITHMS)}\n"
         f"tolerance: {TOLERANCE}\n"
     )
-    with open(LOG_PATH, "w", encoding="utf8") as f:
+    with open(log_path, "w", encoding="utf8") as f:
         f.write(summary)
         if divergences:
             f.write("first divergences:\n")
@@ -263,7 +271,7 @@ def main():
 
     print(summary)
     if divergences:
-        print(f"divergences found: {len(divergences)}, see fuzz/divergences.txt")
+        print(f"divergences found: {len(divergences)}, see {divergences_path}")
         sys.exit(1)
     if near_misses:
         print(f"note: {len(near_misses)} near misses within tolerance, see details above")
