@@ -1,10 +1,13 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyAnyMethods, PyList, PyListMethods, PyString, PyTuple};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
 use tdcore::edit;
+use tdcore::sequence;
 use tdcore::simple;
+use tdcore::token;
 
 /// Collects the first Python error raised inside a comparison callback so the
 /// kernel (which returns plain values) can stay pure while the error still
@@ -34,6 +37,7 @@ fn seq_to_chars(seq: &Bound<'_, PyAny>) -> PyResult<Vec<char>> {
 type BoolPred<'a> = Box<dyn Fn(&Py<PyAny>, &Py<PyAny>) -> bool + 'a>;
 type ColPred<'a> = Box<dyn Fn(&[Option<&Py<PyAny>>]) -> bool + 'a>;
 type FloatSim<'a> = Box<dyn Fn(&Py<PyAny>, &Py<PyAny>) -> f64 + 'a>;
+type HashKeyPred<'a> = Box<dyn Fn(&PyHashKey, &PyHashKey) -> bool + 'a>;
 
 fn seq_to_objects(seq: &Bound<'_, PyAny>) -> PyResult<Vec<Py<PyAny>>> {
     let mut out = Vec::new();
@@ -603,6 +607,103 @@ fn length(sequences: &Bound<'_, PyAny>) -> PyResult<usize> {
     Ok(simple::length_distance(&lengths))
 }
 
+/// Matched indices (into `s1`, increasing order) for the longest common
+/// subsequence, mirroring the `LCSSeq._dynamic` matrix walk.
+#[pyfunction]
+fn lcsseq<'py>(
+    py: Python<'py>,
+    s1: &Bound<'py, PyAny>,
+    s2: &Bound<'py, PyAny>,
+) -> PyResult<Vec<usize>> {
+    if s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
+        let a = seq_to_chars(s1)?;
+        let b = seq_to_chars(s2)?;
+        let eq = |x: &char, y: &char| x == y;
+        return Ok(sequence::lcsseq(&a, &b, eq));
+    }
+    let a = seq_to_objects(s1)?;
+    let b = seq_to_objects(s2)?;
+    let slot = ErrSlot::default();
+    let pred = bool_pred(py, &slot, &None);
+    let result = sequence::lcsseq(&a, &b, &pred);
+    slot.take()?;
+    Ok(result)
+}
+
+/// `(besti, bestsize)` from the difflib-standard longest common substring,
+/// mirroring `LCSStr._standart`.
+#[pyfunction]
+fn lcsstr_standard<'py>(
+    py: Python<'py>,
+    s1: &Bound<'py, PyAny>,
+    s2: &Bound<'py, PyAny>,
+) -> PyResult<(usize, usize)> {
+    if s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
+        let a = seq_to_chars(s1)?;
+        let b = seq_to_chars(s2)?;
+        let eq = |x: &char, y: &char| x == y;
+        return Ok(sequence::lcsstr_standard(&a, &b, eq));
+    }
+    let a = objects_to_hashkeys(py, seq_to_objects(s1)?)?;
+    let b = objects_to_hashkeys(py, seq_to_objects(s2)?)?;
+    let slot = ErrSlot::default();
+    let slot_ref = &slot;
+    let pred: HashKeyPred<'_> =
+        Box::new(
+            move |x: &PyHashKey, y: &PyHashKey| match x.obj.bind(py).eq(y.obj.bind(py)) {
+                Ok(v) => v,
+                Err(e) => {
+                    slot_ref.record(e);
+                    false
+                }
+            },
+        );
+    let result = sequence::lcsstr_standard(&a, &b, &pred);
+    slot.take()?;
+    Ok(result)
+}
+
+/// Sum of matched block lengths for the Ratcliff-Obershelp recursion,
+/// mirroring `RatcliffObershelp._find`.
+#[pyfunction]
+fn ratcliff_obershelp_find(sequences: &Bound<'_, PyAny>) -> PyResult<usize> {
+    let mut seqs: Vec<Vec<char>> = Vec::new();
+    for item in sequences.try_iter()? {
+        seqs.push(seq_to_chars(&item?)?);
+    }
+    Ok(sequence::ratcliff_obershelp(&seqs))
+}
+
+/// Counter statistics shared by the token-family algorithms.
+///
+/// `counters` is a list of dict-like objects (Counters), `as_set` mirrors the
+/// adapter's `_count_counters` mode. Returns `(intersection, union, counts)`.
+#[pyfunction]
+fn token_stats(counters: &Bound<'_, PyAny>, as_set: bool) -> PyResult<(f64, f64, Vec<f64>)> {
+    let mut maps: Vec<HashMap<PyHashKey, f64>> = Vec::new();
+    for counter in counters.try_iter()? {
+        let counter = counter?;
+        let items = counter.call_method0("items")?;
+        let mut map: HashMap<PyHashKey, f64> = HashMap::new();
+        for item in items.try_iter()? {
+            let item = item?;
+            let key = item.get_item(0)?;
+            let count = item.get_item(1)?;
+            let hash = key.hash()? as u64;
+            map.insert(
+                PyHashKey {
+                    obj: key.unbind(),
+                    hash,
+                },
+                count.extract()?,
+            );
+        }
+        maps.push(map);
+    }
+    let stats = token::token_stats(&maps, as_set);
+    Ok((stats.intersection, stats.union, stats.counts))
+}
+
 /// Extension module `textdistance._textdistance`.
 ///
 /// Kernel functions are registered here as they are ported. The Python
@@ -623,5 +724,9 @@ fn _textdistance(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(editex, m)?)?;
     m.add_function(wrap_pyfunction!(common_prefix, m)?)?;
     m.add_function(wrap_pyfunction!(length, m)?)?;
+    m.add_function(wrap_pyfunction!(lcsseq, m)?)?;
+    m.add_function(wrap_pyfunction!(lcsstr_standard, m)?)?;
+    m.add_function(wrap_pyfunction!(ratcliff_obershelp_find, m)?)?;
+    m.add_function(wrap_pyfunction!(token_stats, m)?)?;
     Ok(())
 }
