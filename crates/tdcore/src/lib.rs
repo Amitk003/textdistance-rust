@@ -6,6 +6,7 @@
 //! Python runtime. Kernel modules are added family by family as they are
 //! ported.
 
+pub mod compression;
 pub mod edit;
 pub mod sequence;
 pub mod simple;

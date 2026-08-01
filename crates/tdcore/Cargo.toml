@@ -6,3 +6,5 @@ license.workspace = true
 description = "Native algorithm kernels for the textdistance port."
 
 [dependencies]
+num-bigint = "0.4"
+num-integer = "0.1"
