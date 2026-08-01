@@ -2,7 +2,7 @@ differential fuzz run
 mode: long
 seed: 20260801
 duration: 65.0s (requested 65.0s)
-cases: 1423600
+cases: 1932600
 divergences: 0
 near_misses_within_1e-9: 0
 algorithms: 37

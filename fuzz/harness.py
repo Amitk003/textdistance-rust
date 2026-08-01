@@ -1,8 +1,9 @@
 """Differential fuzz harness: original textdistance vs this port.
 
-Generates random inputs (text, unicode, varying qval and as_set), runs the
-same case through the port in-process and through the original in a separate
-subprocess, and compares every result.
+Generates random inputs (text, unicode, varying qval and as_set, list/tuple and
+numeric sequences, and lone-surrogate strings on the compression family), runs
+the same case through the port in-process and through the original in a
+separate subprocess, and compares every result.
 
 Comparison rules:
   - Values are compared by their repr string (exact, type-sensitive, and
@@ -15,10 +16,11 @@ Comparison rules:
 Run:
     .venv/Scripts/python fuzz/harness.py --duration 75 [--seed N]
     .venv/Scripts/python fuzz/harness.py --duration 65 --long [--seed N]
+    .venv/Scripts/python fuzz/harness.py --duration 25 --no-logs  # CI smoke
 
 Each run's summary is written to fuzz/log-{std,long}.txt and divergences to
 fuzz/divergences-{std,long}.txt, so the committed artifacts for both modes
-survive and cover every exported algorithm.
+survive and cover every exported algorithm. --no-logs skips writing for CI.
 """
 
 import argparse
@@ -53,6 +55,16 @@ ALGORITHMS = [
 ASCII = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,"
 UNICODE = "a\u00e9\u00ea\u00fc\u00f1\u03b1\u03b2\u4e00\u65e5\u672c\u0928\u00f6\u00e8\u00e2"
 
+# The compression family is the only one whose pure coders operate on Python
+# code points, so lone surrogates are exercised there and there only (the edit,
+# sequence and simple kernels take valid Unicode scalar values; see DECISIONS
+# D20). Bz2/zlib/lzma raise UnicodeEncodeError on both sides, which the harness
+# treats as an exact match.
+COMPRESSION = {
+    "arith_ncd", "bwtrle_ncd", "bz2_ncd", "entropy_ncd", "lzma_ncd",
+    "rle_ncd", "sqrt_ncd", "zlib_ncd",
+}
+
 
 def make_pool(unicode_chance):
     if random.random() < unicode_chance:
@@ -68,6 +80,18 @@ def random_sequence():
     return "".join(random.choice(pool) for _ in range(length))
 
 
+def random_sequence_numeric(rng):
+    length = rng.choice([0, 1, 2, 4, 8, 16])
+    kind = rng.random()
+    if kind < 0.4:
+        pool = [0, 1, 2, 3, 5, 10]
+    elif kind < 0.7:
+        pool = [0.0, 0.5, 1.5, 2.0, 10.25, -3.0]
+    else:
+        pool = [0, 1, "a", 2.5, True, None]
+    return [rng.choice(pool) for _ in range(length)]
+
+
 def random_sequence_deep():
     pool = make_pool(0.5)
     kind = random.random()
@@ -81,9 +105,37 @@ def random_sequence_deep():
     return tuple(items)
 
 
-def random_case(rng):
-    alg = rng.choice(ALGORITHMS)
+def random_surrogate_case(rng):
+    alg = rng.choice(sorted(COMPRESSION))
     qval = rng.choice([None, 1, 1, 2, 3])
+    as_set = rng.choice([False, False, True])
+    s1 = random_surrogate_string(rng)
+    s2 = random_surrogate_string(rng)
+    if rng.random() < 0.3:
+        s2 = s1
+    return {
+        "alg": alg,
+        "kwargs": {"qval": qval, "as_set": as_set},
+        "s1": s1,
+        "s2": s2,
+    }
+
+
+def random_surrogate_string(rng):
+    pool = make_pool(0.5) + "\ud800"
+    length = rng.choice([0, 1, 2, 3, 5, 8])
+    s = "".join(rng.choice(pool) for _ in range(length))
+    if s and rng.random() < 0.7:
+        pos = rng.randrange(len(s) + 1)
+        s = s[:pos] + "\ud800" + s[pos:]
+    return s
+
+
+def random_case(rng):
+    if rng.random() < 0.12:
+        return random_surrogate_case(rng)
+    alg = rng.choice(ALGORITHMS)
+    qval = rng.choice([None, 0, 1, 1, 2, 3, 5])
     as_set = rng.choice([False, False, True])
     s1 = random_sequence()
     s2 = random_sequence()
@@ -100,15 +152,23 @@ def random_case(rng):
 
 
 def random_case_deep(rng):
+    if rng.random() < 0.12:
+        return random_surrogate_case(rng)
     alg = rng.choice(ALGORITHMS)
-    qval = rng.choice([None, None, 1, 1, 2, 3, 4])
+    qval = rng.choice([None, None, 0, 1, 1, 2, 3, 4, 6])
     as_set = rng.choice([False, False, True])
-    s1 = random_sequence_deep()
-    s2 = random_sequence_deep()
-    if rng.random() < 0.2:
-        s2 = s1
-    if rng.random() < 0.1:
-        s2 = "" if isinstance(s1, str) else type(s1)()
+    if rng.random() < 0.15:
+        s1 = random_sequence_numeric(rng)
+        s2 = random_sequence_numeric(rng)
+        if rng.random() < 0.2:
+            s2 = s1
+    else:
+        s1 = random_sequence_deep()
+        s2 = random_sequence_deep()
+        if rng.random() < 0.2:
+            s2 = s1
+        if rng.random() < 0.1:
+            s2 = "" if isinstance(s1, str) else type(s1)()
     return {
         "alg": alg,
         "kwargs": {"qval": qval, "as_set": as_set},
@@ -252,7 +312,7 @@ def main():
     elapsed = time.time() - start
 
     if not args.no_logs:
-        with open(divergences_path, "w", encoding="utf8") as f:
+        with open(divergences_path, "w", encoding="utf8", errors="replace") as f:
             f.write(f"divergences: {len(divergences)}\n")
             for case, detail, kind in divergences[:200]:
                 f.write(json.dumps({"kind": kind, "case": case, "detail": detail}) + "\n")
@@ -268,7 +328,7 @@ def main():
             f"algorithms: {len(ALGORITHMS)}\n"
             f"tolerance: {TOLERANCE}\n"
         )
-        with open(log_path, "w", encoding="utf8") as f:
+        with open(log_path, "w", encoding="utf8", errors="replace") as f:
             f.write(summary)
             if divergences:
                 f.write("first divergences:\n")

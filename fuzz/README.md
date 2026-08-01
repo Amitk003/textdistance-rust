@@ -23,7 +23,10 @@ How the comparison works:
 
 - The original runs in a separate subprocess (via `reference_worker.py`) so both sides can be
   imported without a module clash; the port lives in the parent process.
-- Inputs: random text, unicode, varying `qval`, `as_set`, and list and tuple sequences.
+- Inputs: random text, unicode, varying `qval` (including n-gram edge cases), `as_set`,
+  list and tuple sequences, numeric and mixed-element sequences, and lone-surrogate strings
+  on the compression family (the only family whose pure coders operate on Python code
+  points; see DECISIONS D20).
 - Outputs compared: `distance`, `similarity`, `normalized_distance`,
   `normalized_similarity`, `maximum`, plus exception behavior (same inputs raise or not).
 - Every batch is serialized to JSON and deserialized identically on both sides, so the port
@@ -37,4 +40,5 @@ Run:
 ```
 .venv/Scripts/python fuzz/harness.py --duration 75
 .venv/Scripts/python fuzz/harness.py --duration 65 --long
+.venv/Scripts/python fuzz/harness.py --duration 25 --no-logs   # CI smoke (no log writes)
 ```

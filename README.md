@@ -19,7 +19,7 @@ heavy math runs at native speed.
 - **Verified equivalence.** The original project's own test suite (400 tests) runs unmodified
   against this port. A differential fuzz harness compares this port against the original
   Python library over random inputs, covering every exported algorithm (37, including `bag`
-  and `lzma_ncd`); the latest continuous runs covered 2.08 million short and 1.42 million
+  and `lzma_ncd`); the latest continuous runs covered 2.76 million short and 1.93 million
   long cases with zero divergence.
 - **Safety discipline.** The core crate is compiled with `#![forbid(unsafe_code)]`. The FFI
   layer is the only place a boundary is touched, and it stays as small as possible.
