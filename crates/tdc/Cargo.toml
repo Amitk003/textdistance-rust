@@ -1,0 +1,9 @@
+[package]
+name = "tdc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Command line interface for the textdistance Rust kernels."
+
+[dependencies]
+tdcore = { path = "../tdcore" }
