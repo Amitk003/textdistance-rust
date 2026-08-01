@@ -14,8 +14,11 @@ if (-not (Test-Path $VenvPy)) {
 & $VenvPy -m pip install --quiet --upgrade pip
 & $VenvPy -m pip install --quiet "maturin>=1.4,<2.0" pytest hypothesis
 & $VenvPy -m maturin develop --release
+& cargo build --release -p tdc
 
 Write-Host ""
-Write-Host "Extension built and installed into .venv."
+Write-Host "Extension built and installed into .venv; CLI built at target\release\tdc.exe."
 Write-Host "Run the original suite with:"
 Write-Host "  .venv\Scripts\python.exe -m pytest -m 'not external' tests/original"
+Write-Host "Try the CLI with:"
+Write-Host "  target\release\tdc.exe distance levenshtein test text"
