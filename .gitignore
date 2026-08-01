@@ -1,0 +1,30 @@
+# Local memory and notes (never committed)
+memory/
+
+# Reference checkout of the original project (never committed)
+reference/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.hypothesis/
+
+# Compiled extension artifacts
+*.pyd
+*.pdb
+*.so
+*.dylib
+
+# Rust
+target/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
