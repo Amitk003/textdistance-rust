@@ -1,0 +1,168 @@
+# Decisions
+
+Every non-trivial architectural divergence from the original `textdistance`, with rationale.
+This file is read as a record of intent. Entries are honest, including where a tradeoff was
+forced by time or by the target language.
+
+## D1. Rust kernels behind a thin Python adapter
+
+The original is a pure-Python package whose classes are the API. Porting literally would mean
+either (a) rebuilding every class in Rust via PyO3 pyclass, including Python-object plumbing
+like `collections.Counter`, word splitting, and `itertools` permutations, or (b) keeping the
+class layer and moving the math into Rust. We chose (b).
+
+Rationale: the class machinery is generic object glue, not the algorithm. The algorithms are
+the DP matrices, n-gram counts, and coding schemes, and those are the substance of the port.
+Moving that substance to Rust keeps the port idiomatic and fast, while the adapter preserves
+exact Python class semantics (`isinstance`, mutable attributes, callable instances) that
+reimplementing in PyO3 would be fragile to reproduce. The adapter is small, clearly
+delimited, and documented. This is the "thin adapter" boundary the porting brief for this
+kind of work expects, and it is the only Python in the shipped package.
+
+## D2. External library delegation is not ported
+
+The original can delegate to installed optional libraries (jellyfish, abydos, and others)
+through its `external_answer` path. We do not reproduce that delegation.
+
+Rationale: in an environment with none of those libraries installed, the original's
+`external_answer` returns None and the pure-Python implementation runs. That is exactly the
+environment this port targets and tests in. Porting the delegation would mean importing
+third-party Python modules from Rust, which adds surface for no behavioral gain in the tested
+environment. The `external`-marked tests that exercise delegation are excluded from the suite
+with the same marker the upstream project uses in its own CI.
+
+## D3. Test suite definition mirrors upstream
+
+The suite is run as `pytest -m "not external"`, matching the upstream `pytest-pure` task.
+The `external` marker is registered (via the same `--strict-markers` setting) but not
+filtered at the project level, so the marker split is reproduced explicitly.
+
+Rationale: the upstream project itself separates pure tests from external-library tests. Our
+parity claim is defined against the same set, so the comparison is apples to apples.
+
+## D4. Compression NCD links the same C libraries as CPython
+
+bz2, zlib, and lzma NCD algorithms depend on compressed length. CPython's `bz2`, `zlib`, and
+`lzma` modules wrap libbz2, libz, and liblzma. To match compressed lengths bit for bit, the
+port calls the same C libraries through `bzip2-sys`, `libz-sys`, and `lzma-sys` with the same
+defaults (bz2 blocksize 9, zlib Z_DEFAULT_COMPRESSION, lzma preset 6).
+
+Rationale: an alternative Rust compressor (for example flate2) is a different codec version
+and can produce a different compressed length for the same input, which would change the NCD
+value and break exact differential matching. Using the identical underlying codecs makes the
+port's NCD outputs numerically identical to the original. This trades a pure-Rust dependency
+graph for exact equivalence, which is the priority for a behavioral port.
+
+## D5. Pure-Python coders are ported directly to Rust
+
+ArithNCD, EntropyNCD, RLE, BWT+RLE, and SqrtNCD have no C dependency in the original; they
+are deterministic pure-Python implementations. Those are ported line for line into Rust
+arithmetic/entropy encoders so the byte output matches exactly.
+
+Rationale: deterministic codecs are the easiest exact match, and there is no reason to accept
+divergence. Order of operations in the entropy/arithmetic loops is preserved to keep floating
+point identical.
+
+## D6. Float arithmetic aims for bit-exactness
+
+Python floats and Rust f64 are both IEEE-754 doubles, so identical operation order yields
+identical bits. The port preserves the original's expression shapes (for example
+`self.distance(...) / maximum` and the guard `if maximum == 0: return 0`) to keep normalized
+outputs bit-identical where possible.
+
+Rationale: the upstream property tests already compare with `isclose`, so exactness is not
+required to pass them. But the differential fuzz harness compares raw outputs, and bit-exact
+outputs let that comparison use exact equality with a tiny documented tolerance as a safety
+valve for rare expression reshuffles. Where exactness cannot be guaranteed, the fuzz harness
+uses a tolerance of 1e-9 and the divergence count is reported honestly.
+
+## D7. Integer policy
+
+Python integers are arbitrary precision. The port uses u64/usize, which is sufficient for
+every reachable input in the test suite and for realistic workloads (edit distances and
+counts grow linearly with input length, far below u64 bounds).
+
+Rationale: arbitrary-precision integers in Rust would force a big-int dependency for a case
+that cannot occur within the documented input envelope. The limit is stated here and in the
+README rather than silently accepted. Guard functions assert on unreachable overflow rather
+than wrapping.
+
+## D8. Unicode and word splitting
+
+`qval=None` semantics split text by words. Python's `str.split()` with no argument splits on
+any run of Unicode whitespace and drops empty tokens. The port reimplements that exact rule
+over the input characters rather than using ASCII-only splitting.
+
+Rationale: `bag` and other word-mode algorithms are behaviorally defined by this rule, and a
+naive whitespace split changes results for Unicode whitespace and multiple runs of spaces.
+
+## D9. Custom similarity callables are wrapped at the FFI boundary
+
+Some algorithms accept Python callables (`sim_func` for Gotoh and SmithWaterman, `sim_test`
+for Prefix). The DP kernels live in Rust and invoke the callable through PyO3 when one is
+supplied.
+
+Rationale: honoring arbitrary Python callables inside a Rust kernel requires a callback
+bridge; there is no way around it without reimplementing the DP in Python. The default path
+(no custom callable) uses a pure-Rust predicate and never crosses back, which keeps the hot
+path fast and the benchmark story honest.
+
+## D10. quick_answer and external_answer behavior
+
+The generic `quick_answer` short-circuits (empty sequences, identical sequences, single
+sequence) before the kernel runs. That logic is reproduced in the adapter so the return
+values, including `maximum` for empty inputs in the similarity base, match the original.
+
+Rationale: these short-circuits are observable API behavior (the property tests depend on
+`distance('', '') == 0` and the unequal-distance guard), so they are part of the contract,
+not an optimization detail.
+
+## D11. The module surface matches the original exactly
+
+`textdistance/__init__.py` in the port exposes the same names as upstream: all algorithm
+singletons, all classes, `utils.find_ngrams` and `utils.words_combinations`, plus the module
+metadata (`__title__`, `__version__`, `VERSION`). The adapter's `__all__` mirrors the
+upstream files.
+
+Rationale: the original tests reference module-level names directly
+(`textdistance.levenshtein`, `textdistance.Tversky`, `textdistance.bag`). A port that passes
+the original tests must present the same surface, and doing so is also what makes the port a
+drop-in replacement for downstream users.
+
+## D12. Distribution naming
+
+The built wheel is distributed as `textdistance-rust`, while the importable package remains
+`textdistance`.
+
+Rationale: keeping the import name `textdistance` is required for drop-in compatibility and
+for the original tests to run unmodified. A distinct distribution name avoids confusion with
+the upstream package on index servers while keeping the source package name exact.
+
+## D13. Build reproducibility and pinned reference
+
+The reference original is pinned to commit d6a68d61088a40eef5c88191ccf79323dbf34850, and the
+test suite hashes are recorded at that pin. The port's CI and local build install a pinned
+toolchain and the exact test dependencies.
+
+Rationale: a behavioral port is only meaningful against a fixed original. Pinning makes the
+hashes in `tests/original/SHA256SUMS.txt` reproducible and lets anyone re-verify the
+equivalence claim byte for byte.
+
+## D14. Safety boundary
+
+`crates/tdcore` is compiled with `#![forbid(unsafe_code)]`. All `unsafe` in the project is
+confined to the PyO3 FFI crate and is only that which the PyO3 API itself requires.
+
+Rationale: the core is where correctness lives and where a memory error would be a port bug.
+Keeping it mechanically unsafe-free is a checkable property, and it keeps the FFI surface
+small and auditable.
+
+## D15. Benchmark scope is declared up front
+
+Benchmarks cover throughput, p99 latency, RSS, and startup on a shared workload, with the
+methodology in `bench/methodology.md`. No number is published without the script that
+produced it.
+
+Rationale: throughput-only numbers are easy to make look good and easy to distrust. The
+behavioral claims come first; performance numbers are reported with their distribution and
+their measurement method, including cases where the port is slower than the original.
