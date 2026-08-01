@@ -1,9 +1,11 @@
+use num_bigint::BigInt;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyAnyMethods, PyList, PyListMethods, PyString, PyTuple};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 
+use tdcore::compression;
 use tdcore::edit;
 use tdcore::sequence;
 use tdcore::simple;
@@ -704,6 +706,58 @@ fn token_stats(counters: &Bound<'_, PyAny>, as_set: bool) -> PyResult<(f64, f64,
     Ok((stats.intersection, stats.union, stats.counts))
 }
 
+/// Arithmetic coding of a string, returning the exact encoded fraction as
+/// `(numerator, denominator)`, mirroring `ArithNCD._compress`.
+#[pyfunction]
+fn arith_compress(data: &str, terminator: Option<&str>) -> (BigInt, BigInt) {
+    compression::arith_compress(data, terminator)
+}
+
+/// Run-length encoding over characters, mirroring `RLENCD._compress`.
+#[pyfunction]
+fn rle(data: &str) -> String {
+    compression::rle(data)
+}
+
+/// Burrows-Wheeler transform over characters, mirroring `BWTRLENCD._compress`.
+#[pyfunction]
+fn bwt(data: &str, terminator: &str) -> String {
+    compression::bwt(data, terminator)
+}
+
+/// Sum of square roots of per-element counts, mirroring `SqrtNCD._get_size`.
+#[pyfunction]
+fn sqrt_size(data: &str) -> f64 {
+    compression::sqrt_size(data)
+}
+
+/// Shannon entropy of per-element counts, mirroring `EntropyNCD._compress`.
+#[pyfunction]
+fn entropy(data: &str, base: f64) -> f64 {
+    compression::entropy(data, base)
+}
+
+/// bzip2-compressed bytes with the 15-byte header dropped, mirroring
+/// `BZ2NCD._compress`.
+#[pyfunction]
+fn bz2_compress(data: &[u8]) -> Vec<u8> {
+    codec::bz2_compress(data)
+}
+
+/// zlib-compressed bytes with the 2-byte header dropped, mirroring
+/// `ZLIBNCD._compress`.
+#[pyfunction]
+fn zlib_compress(data: &[u8]) -> Vec<u8> {
+    codec::zlib_compress(data)
+}
+
+/// lzma/xz-compressed bytes with the 14-byte header dropped, mirroring
+/// `LZMANCD._compress`.
+#[pyfunction]
+fn lzma_compress(data: &[u8]) -> Vec<u8> {
+    codec::lzma_compress(data)
+}
+
 /// Extension module `textdistance._textdistance`.
 ///
 /// Kernel functions are registered here as they are ported. The Python
@@ -728,5 +782,13 @@ fn _textdistance(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(lcsstr_standard, m)?)?;
     m.add_function(wrap_pyfunction!(ratcliff_obershelp_find, m)?)?;
     m.add_function(wrap_pyfunction!(token_stats, m)?)?;
+    m.add_function(wrap_pyfunction!(arith_compress, m)?)?;
+    m.add_function(wrap_pyfunction!(rle, m)?)?;
+    m.add_function(wrap_pyfunction!(bwt, m)?)?;
+    m.add_function(wrap_pyfunction!(sqrt_size, m)?)?;
+    m.add_function(wrap_pyfunction!(entropy, m)?)?;
+    m.add_function(wrap_pyfunction!(bz2_compress, m)?)?;
+    m.add_function(wrap_pyfunction!(zlib_compress, m)?)?;
+    m.add_function(wrap_pyfunction!(lzma_compress, m)?)?;
     Ok(())
 }
