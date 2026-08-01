@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/tdcore", "crates/pyapi"]
+members = ["crates/codec", "crates/tdcore", "crates/pyapi"]
 
 [workspace.package]
 version = "0.1.0"

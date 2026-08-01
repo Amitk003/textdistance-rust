@@ -1,0 +1,15 @@
+[package]
+name = "codec"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Safe wrappers over the C compression libraries that CPython links (bz2, zlib, lzma)."
+
+[dependencies]
+bzip2-sys = "0.1"
+libz-sys = "1.1"
+lzma-sys = "0.1"
+
+[features]
+# Kept in sync with the pyapi build: maturin needs the C libraries compiled.
+default = []
