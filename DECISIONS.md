@@ -201,3 +201,16 @@ Rationale: the port does not bundle pyxdameraulevenshtein, jellyfish, rapidfuzz,
 other external providers, so there is nothing to load or reorder. Keeping the manager API
 preserves compatibility for downstream code that registers libraries; optimizing an empty
 registry would only add a broken file read.
+
+## D19. Hypothesis deadline is relaxed for the verbatim upstream suite
+
+The repo-root `conftest.py` registers and loads a hypothesis profile with a 2000 ms
+per-example deadline. The default is 200 ms.
+
+Rationale: the upstream compression tests generate very long unicode strings on which the
+arithmetic NCD is inherently slow on both sides of the port. Measured on the failing input,
+the port takes ~280 ms and the pinned original ~300 ms, both above the 200 ms default, and
+both compute bit-identical output (1.0118632). The upstream project has the same problem and
+excludes `lzma_ncd` from CI as "too slow, makes CI flaky". The deadline is an anti-hang guard,
+not a correctness assertion, so relaxing it does not weaken what the tests verify. This makes
+the port's suite deterministic on this class of tests instead of flaky.
