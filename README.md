@@ -16,7 +16,8 @@ heavy math runs at native speed.
   single FFI boundary hop into compiled code, not a Python loop.
 - **Verified equivalence.** The original project's own test suite (400 tests) runs unmodified
   against this port. A differential fuzz harness compares this port against the original
-  Python library over random inputs and logs zero divergence.
+  Python library over random inputs; the latest continuous runs covered 3.3 million short
+  and 1.3 million long cases with zero divergence.
 - **Safety discipline.** The core crate is compiled with `#![forbid(unsafe_code)]`. The FFI
   layer is the only place a boundary is touched, and it stays as small as possible.
 
@@ -37,11 +38,19 @@ textdistance.jaro_winkler("nelson", "neilsen")      # ~0.92
 textdistance.Jaccard(as_set=True)("test", "text")   # 0.25
 ```
 
-There is also a standalone command line tool, `tdc`, that reads two values and prints the
-chosen algorithm's result:
+There is also a standalone command line tool, `tdc`, with no Python involved. It reads two
+values, computes the chosen metric, and prints the result:
 
 ```powershell
-tdc levenshtein "test" "text"
+tdc distance levenshtein "test" "text"          # 1
+tdc similarity jaro_winkler "Robert" "Rupert"   # 0.8
+tdc list                                        # supported algorithms
+```
+
+Build it (or run `.\build.ps1`, which builds it for you):
+
+```powershell
+cargo build --release -p tdc   # then use target\release\tdc.exe
 ```
 
 ## Why a Rust port
@@ -93,6 +102,7 @@ LZMANCD.
 crates/tdcore/       Rust algorithm kernels (the port). No unsafe.
 crates/codec/        C compression bindings (bz2, zlib, lzma), the only unsafe outside pyapi.
 crates/pyapi/        PyO3 extension module textdistance._textdistance. Thin FFI.
+crates/tdc/          Standalone command line tool over the kernels.
 python/textdistance/ Python adapter: the public class API, delegating math to Rust.
 tests/original/      Upstream test suite, verbatim, hashed.
 tests/port/          Additional tests for the port.
@@ -103,9 +113,35 @@ DECISIONS.md         Every non-trivial divergence from the original, with ration
 
 ## Benchmarks
 
-Methodology and raw results live in `bench/` (p99 latency, RSS, startup, and throughput on a
-shared workload, original vs port). Published numbers are measured with the scripts in that
-directory and reproducible with one command. See `bench/results.json`.
+Measured on this machine (Windows 11, x86_64, Python 3.11.9, Rust 1.97.1). Both sides run the
+identical workload in a fresh process: 40 word pairs, 8,000 timed `distance()` calls per
+algorithm after 200 warmup calls. Throughput is calls per second; the full methodology is in
+`bench/methodology.md` and the raw numbers in `bench/results.json`.
+
+| algorithm             | port      | original  | speedup |
+| --------------------- | --------- | --------- | ------- |
+| levenshtein           | 225,575   | 37,441    | 6x      |
+| damerau_levenshtein   | 272,012   | 25,702    | 11x     |
+| jaro_winkler          | 292,283   | 119,125   | 2x      |
+| lcsseq                | 393,526   | 32,685    | 12x     |
+| ratcliff_obershelp    | 218,066   | 67,449    | 3x      |
+| jaccard               | 159,426   | 100,343   | 2x      |
+| arith_ncd             | 10,005    | 2,838     | 4x      |
+| bz2_ncd               | 10,258    | 9,390     | 1x      |
+
+The dynamic-programming algorithms widen the gap on longer strings: on ~200 character
+sentence pairs, levenshtein runs 331x and lcsseq 199x faster than the original. Importing
+`textdistance` takes 15 ms with the port versus 90 ms with the original, and peak RSS is
+~17 MB versus ~27 MB.
+
+Two rows are worth reading as the honest baseline: `bz2_ncd` is 1x because both sides call the
+same C compression library, and `jaccard` is 1x on long strings because the token path is
+dominated by the same counting logic. Nothing is filtered here; `bench/run.py` reproduces
+every number.
+
+```
+.venv/Scripts/python bench/run.py
+```
 
 ## License
 
