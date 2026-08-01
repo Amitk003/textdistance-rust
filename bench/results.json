@@ -1,0 +1,402 @@
+{
+  "port": {
+    "algorithms": {
+      "arith_ncd": {
+        "calls": 8000,
+        "max_us": 696.3,
+        "p50_us": 79.8,
+        "p99_us": 366.1,
+        "rss_mb": 17.5703125,
+        "throughput": 10005.140140722091
+      },
+      "bz2_ncd": {
+        "calls": 8000,
+        "max_us": 507.1,
+        "p50_us": 92.0,
+        "p99_us": 200.2,
+        "rss_mb": 17.75,
+        "throughput": 10258.431694006944
+      },
+      "damerau_levenshtein": {
+        "calls": 8000,
+        "max_us": 188.2,
+        "p50_us": 3.5,
+        "p99_us": 4.9,
+        "rss_mb": 17.29296875,
+        "throughput": 272011.69630700717
+      },
+      "jaccard": {
+        "calls": 8000,
+        "max_us": 685.3,
+        "p50_us": 6.0,
+        "p99_us": 11.5,
+        "rss_mb": 17.50390625,
+        "throughput": 159425.74857243066
+      },
+      "jaccard__long": {
+        "calls": 50,
+        "max_us": 16.6,
+        "p50_us": 15.7,
+        "p99_us": 16.6,
+        "rss_mb": 16.91796875,
+        "throughput": 63083.524044332415
+      },
+      "jaro_winkler": {
+        "calls": 8000,
+        "max_us": 203.3,
+        "p50_us": 3.3,
+        "p99_us": 5.2,
+        "rss_mb": 17.3125,
+        "throughput": 292283.3537709942
+      },
+      "lcsseq": {
+        "calls": 8000,
+        "max_us": 43.1,
+        "p50_us": 2.2,
+        "p99_us": 4.6,
+        "rss_mb": 17.46484375,
+        "throughput": 393526.48884789867
+      },
+      "lcsseq__long": {
+        "calls": 50,
+        "max_us": 55.9,
+        "p50_us": 42.7,
+        "p99_us": 55.9,
+        "rss_mb": 16.87890625,
+        "throughput": 24282.453249773167
+      },
+      "levenshtein": {
+        "calls": 8000,
+        "max_us": 295.2,
+        "p50_us": 3.9,
+        "p99_us": 9.1,
+        "rss_mb": 16.99609375,
+        "throughput": 225574.5103064078
+      },
+      "levenshtein__long": {
+        "calls": 50,
+        "max_us": 31.3,
+        "p50_us": 23.3,
+        "p99_us": 31.3,
+        "rss_mb": 16.55078125,
+        "throughput": 44879.27301084692
+      },
+      "ratcliff_obershelp": {
+        "calls": 8000,
+        "max_us": 230.7,
+        "p50_us": 4.2,
+        "p99_us": 9.7,
+        "rss_mb": 17.34375,
+        "throughput": 218065.6486144205
+      },
+      "ratcliff_obershelp__long": {
+        "calls": 50,
+        "max_us": 139.7,
+        "p50_us": 99.5,
+        "p99_us": 139.7,
+        "rss_mb": 16.95703125,
+        "throughput": 9596.008101728916
+      }
+    },
+    "implementation": "port",
+    "import_ms": 15.238800027873367,
+    "version": "4.6.2"
+  },
+  "reference": {
+    "algorithms": {
+      "arith_ncd": {
+        "calls": 8000,
+        "max_us": 1421.1,
+        "p50_us": 318.4,
+        "p99_us": 844.1,
+        "rss_mb": 27.6328125,
+        "throughput": 2837.9336947964266
+      },
+      "bz2_ncd": {
+        "calls": 8000,
+        "max_us": 630.1,
+        "p50_us": 98.9,
+        "p99_us": 280.5,
+        "rss_mb": 27.9375,
+        "throughput": 9389.761732346402
+      },
+      "damerau_levenshtein": {
+        "calls": 8000,
+        "max_us": 502.0,
+        "p50_us": 32.8,
+        "p99_us": 128.8,
+        "rss_mb": 27.296875,
+        "throughput": 25702.150624922993
+      },
+      "jaccard": {
+        "calls": 8000,
+        "max_us": 224.6,
+        "p50_us": 9.9,
+        "p99_us": 17.8,
+        "rss_mb": 27.625,
+        "throughput": 100343.29955187351
+      },
+      "jaccard__long": {
+        "calls": 50,
+        "max_us": 17.5,
+        "p50_us": 16.5,
+        "p99_us": 17.5,
+        "rss_mb": 26.7265625,
+        "throughput": 60038.42063223804
+      },
+      "jaro_winkler": {
+        "calls": 8000,
+        "max_us": 171.2,
+        "p50_us": 8.3,
+        "p99_us": 14.8,
+        "rss_mb": 27.47265625,
+        "throughput": 119125.44056845845
+      },
+      "lcsseq": {
+        "calls": 8000,
+        "max_us": 344.7,
+        "p50_us": 24.6,
+        "p99_us": 100.2,
+        "rss_mb": 27.60546875,
+        "throughput": 32685.11932716032
+      },
+      "lcsseq__long": {
+        "calls": 50,
+        "max_us": 11598.3,
+        "p50_us": 8450.1,
+        "p99_us": 11598.3,
+        "rss_mb": 26.71484375,
+        "throughput": 122.01672164630257
+      },
+      "levenshtein": {
+        "calls": 8000,
+        "max_us": 251.0,
+        "p50_us": 23.2,
+        "p99_us": 82.1,
+        "rss_mb": 27.015625,
+        "throughput": 37440.843462149984
+      },
+      "levenshtein__long": {
+        "calls": 50,
+        "max_us": 9581.0,
+        "p50_us": 7805.5,
+        "p99_us": 9581.0,
+        "rss_mb": 26.6328125,
+        "throughput": 135.51174793274836
+      },
+      "ratcliff_obershelp": {
+        "calls": 8000,
+        "max_us": 365.0,
+        "p50_us": 14.8,
+        "p99_us": 28.6,
+        "rss_mb": 27.47265625,
+        "throughput": 67448.96221836066
+      },
+      "ratcliff_obershelp__long": {
+        "calls": 50,
+        "max_us": 400.2,
+        "p50_us": 242.5,
+        "p99_us": 400.2,
+        "rss_mb": 26.73046875,
+        "throughput": 3803.9591695944387
+      }
+    },
+    "implementation": "reference",
+    "import_ms": 90.29500000178814,
+    "version": "4.6.2"
+  },
+  "speedups": {
+    "arith_ncd": 3.5255017265087263,
+    "bz2_ncd": 1.0925124605311438,
+    "damerau_levenshtein": 10.583227072182881,
+    "jaccard": 1.588803131693052,
+    "jaccard__long": 1.0507192457767498,
+    "jaro_winkler": 2.453576266968987,
+    "lcsseq": 12.039928167583295,
+    "lcsseq__long": 199.00922531062767,
+    "levenshtein": 6.024824481703985,
+    "levenshtein__long": 331.18363312027793,
+    "ratcliff_obershelp": 3.23304675776108,
+    "ratcliff_obershelp__long": 2.5226369879127803
+  },
+  "workload": {
+    "calls": 8000,
+    "long_calls": 50,
+    "long_pairs": [
+      [
+        "the quick brown fox jumps over the lazy dog and runs through the forest at breakneck speed while birds circle above",
+        "the quick brown fox jumps over the lazy cat and runs into the forest at breakneck pace while birds circle below"
+      ],
+      [
+        "pack my box with five dozen liquor jugs that sit upon the table in the corner of the kitchen next to the window with the blue curtains",
+        "pack my box with five dozen liquor jugs that sit under the table in the corner of the kitchen beside the window with the red curtains"
+      ],
+      [
+        "a brave new world of sparkling machines and gentle electric whispers fills the quiet library where old paper books dream in the evening light",
+        "a brave new world of shining machines and gentle electric murmurs fills the quiet library where old paper books dream in the evening glow"
+      ]
+    ],
+    "word_pairs": [
+      [
+        "kitten",
+        "sitting"
+      ],
+      [
+        "flaw",
+        "lawn"
+      ],
+      [
+        "intention",
+        "execution"
+      ],
+      [
+        "gumbo",
+        "gambol"
+      ],
+      [
+        "test",
+        "text"
+      ],
+      [
+        "nelson",
+        "neilsen"
+      ],
+      [
+        "saturday",
+        "sunday"
+      ],
+      [
+        "christmas",
+        "xmas"
+      ],
+      [
+        "book",
+        "back"
+      ],
+      [
+        "algorithm",
+        "logarithm"
+      ],
+      [
+        "precision",
+        "prison"
+      ],
+      [
+        "robert",
+        "rupert"
+      ],
+      [
+        "dwayne",
+        "duane"
+      ],
+      [
+        "martha",
+        "marhta"
+      ],
+      [
+        "sam",
+        "sana"
+      ],
+      [
+        "tim",
+        "tam"
+      ],
+      [
+        "ruby",
+        "raby"
+      ],
+      [
+        "python",
+        "pythons"
+      ],
+      [
+        "levenshtein",
+        "damerau"
+      ],
+      [
+        "jaro",
+        "winkler"
+      ],
+      [
+        "lcs",
+        "lcs"
+      ],
+      [
+        "sequence",
+        "sequent"
+      ],
+      [
+        "tokenize",
+        "tokenize"
+      ],
+      [
+        "distance",
+        "dist"
+      ],
+      [
+        "fuzzy",
+        "fizzy"
+      ],
+      [
+        "matching",
+        "machining"
+      ],
+      [
+        "string",
+        "sting"
+      ],
+      [
+        "character",
+        "chara"
+      ],
+      [
+        "comparing",
+        "compression"
+      ],
+      [
+        "pairwise",
+        "ways"
+      ],
+      [
+        "edit",
+        "delta"
+      ],
+      [
+        "opossum",
+        "possum"
+      ],
+      [
+        "synonym",
+        "antonym"
+      ],
+      [
+        "circumstances",
+        "circumstances"
+      ],
+      [
+        "perpendicular",
+        "parallel"
+      ],
+      [
+        "conspicuous",
+        "conscious"
+      ],
+      [
+        "rhythm",
+        "rhythms"
+      ],
+      [
+        "phlegm",
+        "phlem"
+      ],
+      [
+        "queueing",
+        "queuing"
+      ],
+      [
+        "accommodate",
+        "accommodation"
+      ]
+    ]
+  }
+}
