@@ -87,6 +87,22 @@ Any divergence from the original is documented in `DECISIONS.md` with its ration
 numbers reported here and in `bench/` are honest: measured, with methodology, including where
 the port falls short.
 
+### Known boundaries
+
+The port matches the original everywhere the original's own suite and the differential fuzz
+exercise it, and a few deliberate boundaries are documented rather than silently accepted:
+
+- **Lone surrogates.** A Python string can contain a lone surrogate (U+D800..DFFF), which is
+  not valid Unicode text. The pure compression coders process Python code points, so they
+  match the original on such strings. The edit, sequence, and phonetic kernels compare valid
+  Unicode scalar values and raise a clear `UnicodeEncodeError` there; the original would
+  compute. Upstream exercises surrogates only on the compression tests, and the fuzz pool
+  follows that same split. See DECISIONS D20 and `tests/port/test_surrogates.py`.
+- **Unported drafts.** Upstream `vector_based.py` is a draft that needs numpy and is not part
+  of the package surface; the external-library optimization registry is not bundled (see
+  DECISIONS D17 and D18). Both are deliberately absent, matching the original's behavior in a
+  clean environment.
+
 ## Supported algorithms
 
 Edit based: Levenshtein, DamerauLevenshtein, Jaro, JaroWinkler, Editex, Gotoh,
@@ -105,7 +121,7 @@ LZMANCD.
 
 ```
 crates/tdcore/       Rust algorithm kernels (the port). No unsafe.
-crates/codec/        C compression bindings (bz2, zlib, lzma), the only unsafe outside pyapi.
+crates/codec/        C compression bindings (bz2, zlib, lzma), the only crate containing unsafe.
 crates/pyapi/        PyO3 extension module textdistance._textdistance. Thin FFI.
 crates/tdc/          Standalone command line tool over the kernels.
 python/textdistance/ Python adapter: the public class API, delegating math to Rust.
