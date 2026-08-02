@@ -121,7 +121,11 @@ pub fn lzma_compress(data: &[u8]) -> Vec<u8> {
         // SAFETY: `stream` is a valid, zeroed `lzma_stream` and `filters` is a
         // null-terminated filter chain; check CRC64 is what `lzma.compress`
         // uses.
-        lzma_sys::lzma_stream_encoder(&mut stream, filters.as_mut_ptr(), lzma_sys::LZMA_CHECK_CRC64)
+        lzma_sys::lzma_stream_encoder(
+            &mut stream,
+            filters.as_mut_ptr(),
+            lzma_sys::LZMA_CHECK_CRC64,
+        )
     };
     assert_eq!(init, lzma_sys::LZMA_OK, "lzma encoder init failed");
     let mut dest = Vec::new();
@@ -166,7 +170,11 @@ mod lzma_lengths {
             (b"abcdefgh", 50),
         ];
         for (data, want) in cases {
-            assert_eq!(super::lzma_compress(data).len(), *want, "lzma length for {data:?}");
+            assert_eq!(
+                super::lzma_compress(data).len(),
+                *want,
+                "lzma length for {data:?}"
+            );
         }
     }
 }
