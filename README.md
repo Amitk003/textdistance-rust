@@ -36,7 +36,8 @@ heavy math runs at native speed.
 
 ## Quick start
 
-Requirements: Python 3.8+, a Rust toolchain, and maturin (installed by the build script).
+Requirements: Python 3.8+, a Rust toolchain, and maturin, pytest, hypothesis and numpy
+(installed into `.venv` by the build script).
 
 ```powershell
 # one command: creates .venv, installs tooling, builds and installs the extension

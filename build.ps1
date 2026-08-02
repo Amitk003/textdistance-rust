@@ -29,13 +29,13 @@ if (-not (Test-Path $VenvPy)) {
 }
 
 Invoke-Native -File $VenvPy -Arguments @("-m", "pip", "install", "--quiet", "--upgrade", "pip")
-Invoke-Native -File $VenvPy -Arguments @("-m", "pip", "install", "--quiet", "maturin>=1.4,<2.0", "pytest", "hypothesis")
+Invoke-Native -File $VenvPy -Arguments @("-m", "pip", "install", "--quiet", "maturin>=1.4,<2.0", "pytest", "hypothesis", "numpy")
 Invoke-Native -File $VenvPy -Arguments @("-m", "maturin", "develop", "--release")
 Invoke-Native -File "cargo" -Arguments @("build", "--release", "-p", "tdc")
 
 Write-Host ""
 Write-Host "Extension built and installed into .venv; CLI built at target\release\tdc.exe."
 Write-Host "Run the original suite with:"
-Write-Host "  .venv\Scripts\python.exe -m pytest -m 'not external' tests/original"
+Write-Host "  .venv\Scripts\python.exe -m pytest -m 'not external' tests/original tests/port"
 Write-Host "Try the CLI with:"
 Write-Host "  target\release\tdc.exe distance levenshtein test text"
