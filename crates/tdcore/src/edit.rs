@@ -466,16 +466,14 @@ pub fn strcmp95(s1: &[u32], s2: &[u32], long_strings: bool) -> f64 {
             continue;
         }
         if k < len_s2 {
-            let mut found = false;
-            for jj in k..len_s2 {
+            // Scan `s2_flag[k..]` for the first flagged position. Mirrors the
+            // Python `for j in range(k, len_s2): if s2_flag[j] != 0: k = j + 1;
+            // break`, where a finished scan leaves `j` at `len_s2 - 1`.
+            if let Some(offset) = s2_flag[k..len_s2].iter().position(|f| *f != 0) {
+                let jj = k + offset;
                 j = jj;
-                if s2_flag[jj] != 0 {
-                    k = jj + 1;
-                    found = true;
-                    break;
-                }
-            }
-            if !found {
+                k = jj + 1;
+            } else {
                 j = len_s2 - 1;
             }
         }
