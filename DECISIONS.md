@@ -434,3 +434,10 @@ fresh user install. Verified by running both packages with
 `sys.modules['numpy'] = None` and diffing the raised exceptions: byte-identical
 across `__call__` / `distance` / `similarity` / `normalized_distance` /
 `normalized_similarity`, and `maximum` still works without numpy.
+
+Because upstream's own test suite exercises `needleman_wunsch` and
+`smith_waterman` (tests/original/test_common.py) and can only compute them
+with numpy, the CI workflow now installs numpy as well (`pip install . pytest
+hypothesis numpy`); with it installed, both the pinned original suite and the
+differential fuzz reference compute values and match the port exactly, as they
+do in the local environment.

@@ -33,7 +33,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install the port and test dependencies
-        run: python -m pip install . pytest hypothesis
+        run: python -m pip install . pytest hypothesis numpy
 
       - name: Tests under tests/original are the pinned upstream files, byte-for-byte
         run: python scripts/verify_tests_pinned.py
