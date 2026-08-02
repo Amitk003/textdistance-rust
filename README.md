@@ -108,6 +108,9 @@ Any divergence from the original is documented in `DECISIONS.md` with its ration
 numbers reported here and in `bench/` are honest: measured, with methodology, including where
 the port falls short.
 
+**Documented latent bug.** The original's `gotoh` raises `IndexError` on single-empty input; the
+port reproduces it faithfully and the finding is documented in `BUG.md`.
+
 ### Known boundaries
 
 The port matches the original everywhere the original's own suite and the differential fuzz
