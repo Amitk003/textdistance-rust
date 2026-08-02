@@ -183,7 +183,23 @@ fn metric_value(algo: &Algo, metric: &Metric, s1: &[char], s2: &[char]) -> f64 {
         Family::SimMax1 | Family::SmithWaterman => s1.is_empty() || s2.is_empty(),
         _ => false,
     };
-    let score = if empty { 0.0 } else { (algo.core)(&s1, &s2) };
+    // BaseSimilarity.quick_answer: identical sequences (incl. both empty) are
+    // maximum immediately, but a single empty side is 0. Mirror that ordering
+    // so ("","") scores maximum and ("abc","") scores 0.
+    let both_empty = s1.is_empty() && s2.is_empty();
+    let score = if empty {
+        if both_empty {
+            match algo.family {
+                Family::SimMax1 => 1.0,
+                Family::SmithWaterman => 0.0,
+                _ => 0.0,
+            }
+        } else {
+            0.0
+        }
+    } else {
+        (algo.core)(&s1, &s2)
+    };
     let (distance, similarity, normalized_distance, normalized_similarity) = match algo.family {
         Family::Base => {
             let distance = score;
@@ -371,6 +387,10 @@ mod tests {
         assert_eq!(value("mlipns", "similarity", "MARTHA", "MARHTA"), 1.0);
         assert_eq!(value("jaro", "similarity", "abc", ""), 0.0);
         assert_eq!(value("mlipns", "distance", "tnw", ""), 1.0);
+        assert_eq!(value("jaro", "similarity", "", ""), 1.0);
+        assert_eq!(value("jaro", "distance", "", ""), 0.0);
+        assert_eq!(value("jaro_winkler", "similarity", "", ""), 1.0);
+        assert_eq!(value("strcmp95", "distance", "", ""), 0.0);
     }
 
     #[test]

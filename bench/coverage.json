@@ -1,0 +1,30 @@
+{
+  "footer": "statement coverage of textdistance.algorithms (Python lines only). The port's math is Rust (crates/tdcore), so raw % understates proven behaviour; see fuzz/log-*.txt.",
+  "per_module": {
+    "port": {
+      "base": 77.47747747747748,
+      "compression_based": 95.53571428571429,
+      "edit_based": 91.39784946236558,
+      "phonetic": 92.53731343283582,
+      "sequence_based": 89.1304347826087,
+      "simple": 85.71428571428571,
+      "token_based": 89.40397350993378,
+      "types": 100.0
+    },
+    "ref": {
+      "base": 87.38738738738739,
+      "compression_based": 93.67088607594937,
+      "edit_based": 89.50892857142857,
+      "phonetic": 92.0,
+      "sequence_based": 91.89189189189189,
+      "simple": 84.50704225352112,
+      "token_based": 90.0,
+      "types": 100.0,
+      "vector_based": 0.0
+    }
+  },
+  "totals_pct": {
+    "port": 87.33905579399142,
+    "ref": 79.83595352016404
+  }
+}

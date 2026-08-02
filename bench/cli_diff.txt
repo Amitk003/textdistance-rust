@@ -1,0 +1,798 @@
+# cli_diff: tdc CLI vs reference clone (v4.6.2) on a shared
+# input pair set. REF_RAISED = original raises on this edge
+# case (upstream bugs, see DECISIONS D21); CLI answers.
+# algorithm metric s1 s2 status tdc_value reference_value
+levenshtein            distance               test         text       OK     1.0 1.0
+levenshtein            distance               MARTHA       MARHTA     OK     2.0 2.0
+levenshtein            distance               nelson       neilsen    OK     2.0 2.0
+levenshtein            distance               nelson       neilsen    OK     2.0 2.0
+levenshtein            distance               example      samples    OK     3.0 3.0
+levenshtein            distance                            abc        OK     3.0 3.0
+levenshtein            distance               abc                     OK     3.0 3.0
+levenshtein            distance                                       OK     0.0 0.0
+levenshtein            distance               a b          a  b       OK     1.0 1.0
+levenshtein            distance               M A RHTA     MARTHA     OK     4.0 4.0
+levenshtein            distance               kitten       sitting    OK     3.0 3.0
+levenshtein            distance               flaw         lawn       OK     2.0 2.0
+levenshtein            distance                 MARTHA     MARTHA     OK     4.0 4.0
+levenshtein            distance               こんにちは        こんにちは      OK     0.0 0.0
+levenshtein            distance               éèê          éê         OK     1.0 1.0
+levenshtein            distance               quick        quikc      OK     2.0 2.0
+levenshtein            distance               Saturday     Sunday     OK     3.0 3.0
+levenshtein            distance               bookkeeper   bookkeeping OK     3.0 3.0
+levenshtein            similarity             test         text       OK     3.0 3.0
+levenshtein            similarity             MARTHA       MARHTA     OK     4.0 4.0
+levenshtein            similarity             nelson       neilsen    OK     5.0 5.0
+levenshtein            similarity             nelson       neilsen    OK     5.0 5.0
+levenshtein            similarity             example      samples    OK     4.0 4.0
+levenshtein            similarity                          abc        OK     0.0 0.0
+levenshtein            similarity             abc                     OK     0.0 0.0
+levenshtein            similarity                                     OK     0.0 0.0
+levenshtein            similarity             a b          a  b       OK     3.0 3.0
+levenshtein            similarity             M A RHTA     MARTHA     OK     4.0 4.0
+levenshtein            similarity             kitten       sitting    OK     4.0 4.0
+levenshtein            similarity             flaw         lawn       OK     2.0 2.0
+levenshtein            similarity               MARTHA     MARTHA     OK     6.0 6.0
+levenshtein            similarity             こんにちは        こんにちは      OK     5.0 5.0
+levenshtein            similarity             éèê          éê         OK     2.0 2.0
+levenshtein            similarity             quick        quikc      OK     3.0 3.0
+levenshtein            similarity             Saturday     Sunday     OK     5.0 5.0
+levenshtein            similarity             bookkeeper   bookkeeping OK     8.0 8.0
+levenshtein            normalized_distance    test         text       OK     0.25 0.25
+levenshtein            normalized_distance    MARTHA       MARHTA     OK     0.3333333333333333 0.3333333333333333
+levenshtein            normalized_distance    nelson       neilsen    OK     0.2857142857142857 0.2857142857142857
+levenshtein            normalized_distance    nelson       neilsen    OK     0.2857142857142857 0.2857142857142857
+levenshtein            normalized_distance    example      samples    OK     0.42857142857142855 0.42857142857142855
+levenshtein            normalized_distance                 abc        OK     1.0 1.0
+levenshtein            normalized_distance    abc                     OK     1.0 1.0
+levenshtein            normalized_distance                            OK     0.0 0.0
+levenshtein            normalized_distance    a b          a  b       OK     0.25 0.25
+levenshtein            normalized_distance    M A RHTA     MARTHA     OK     0.5 0.5
+levenshtein            normalized_distance    kitten       sitting    OK     0.42857142857142855 0.42857142857142855
+levenshtein            normalized_distance    flaw         lawn       OK     0.5 0.5
+levenshtein            normalized_distance      MARTHA     MARTHA     OK     0.4 0.4
+levenshtein            normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+levenshtein            normalized_distance    éèê          éê         OK     0.3333333333333333 0.3333333333333333
+levenshtein            normalized_distance    quick        quikc      OK     0.4 0.4
+levenshtein            normalized_distance    Saturday     Sunday     OK     0.375 0.375
+levenshtein            normalized_distance    bookkeeper   bookkeeping OK     0.2727272727272727 0.2727272727272727
+levenshtein            normalized_similarity  test         text       OK     0.75 0.75
+levenshtein            normalized_similarity  MARTHA       MARHTA     OK     0.6666666666666667 0.6666666666666667
+levenshtein            normalized_similarity  nelson       neilsen    OK     0.7142857142857143 0.7142857142857143
+levenshtein            normalized_similarity  nelson       neilsen    OK     0.7142857142857143 0.7142857142857143
+levenshtein            normalized_similarity  example      samples    OK     0.5714285714285714 0.5714285714285714
+levenshtein            normalized_similarity               abc        OK     0.0 0.0
+levenshtein            normalized_similarity  abc                     OK     0.0 0.0
+levenshtein            normalized_similarity                          OK     1.0 1.0
+levenshtein            normalized_similarity  a b          a  b       OK     0.75 0.75
+levenshtein            normalized_similarity  M A RHTA     MARTHA     OK     0.5 0.5
+levenshtein            normalized_similarity  kitten       sitting    OK     0.5714285714285714 0.5714285714285714
+levenshtein            normalized_similarity  flaw         lawn       OK     0.5 0.5
+levenshtein            normalized_similarity    MARTHA     MARTHA     OK     0.6 0.6
+levenshtein            normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+levenshtein            normalized_similarity  éèê          éê         OK     0.6666666666666667 0.6666666666666667
+levenshtein            normalized_similarity  quick        quikc      OK     0.6 0.6
+levenshtein            normalized_similarity  Saturday     Sunday     OK     0.625 0.625
+levenshtein            normalized_similarity  bookkeeper   bookkeeping OK     0.7272727272727273 0.7272727272727273
+damerau_levenshtein    distance               test         text       OK     1.0 1.0
+damerau_levenshtein    distance               MARTHA       MARHTA     OK     1.0 1.0
+damerau_levenshtein    distance               nelson       neilsen    OK     2.0 2.0
+damerau_levenshtein    distance               nelson       neilsen    OK     2.0 2.0
+damerau_levenshtein    distance               example      samples    OK     3.0 3.0
+damerau_levenshtein    distance                            abc        OK     3.0 3.0
+damerau_levenshtein    distance               abc                     OK     3.0 3.0
+damerau_levenshtein    distance                                       OK     0.0 0.0
+damerau_levenshtein    distance               a b          a  b       OK     1.0 1.0
+damerau_levenshtein    distance               M A RHTA     MARTHA     OK     3.0 3.0
+damerau_levenshtein    distance               kitten       sitting    OK     3.0 3.0
+damerau_levenshtein    distance               flaw         lawn       OK     2.0 2.0
+damerau_levenshtein    distance                 MARTHA     MARTHA     OK     4.0 4.0
+damerau_levenshtein    distance               こんにちは        こんにちは      OK     0.0 0.0
+damerau_levenshtein    distance               éèê          éê         OK     1.0 1.0
+damerau_levenshtein    distance               quick        quikc      OK     1.0 1.0
+damerau_levenshtein    distance               Saturday     Sunday     OK     3.0 3.0
+damerau_levenshtein    distance               bookkeeper   bookkeeping OK     3.0 3.0
+damerau_levenshtein    similarity             test         text       OK     3.0 3.0
+damerau_levenshtein    similarity             MARTHA       MARHTA     OK     5.0 5.0
+damerau_levenshtein    similarity             nelson       neilsen    OK     5.0 5.0
+damerau_levenshtein    similarity             nelson       neilsen    OK     5.0 5.0
+damerau_levenshtein    similarity             example      samples    OK     4.0 4.0
+damerau_levenshtein    similarity                          abc        OK     0.0 0.0
+damerau_levenshtein    similarity             abc                     OK     0.0 0.0
+damerau_levenshtein    similarity                                     OK     0.0 0.0
+damerau_levenshtein    similarity             a b          a  b       OK     3.0 3.0
+damerau_levenshtein    similarity             M A RHTA     MARTHA     OK     5.0 5.0
+damerau_levenshtein    similarity             kitten       sitting    OK     4.0 4.0
+damerau_levenshtein    similarity             flaw         lawn       OK     2.0 2.0
+damerau_levenshtein    similarity               MARTHA     MARTHA     OK     6.0 6.0
+damerau_levenshtein    similarity             こんにちは        こんにちは      OK     5.0 5.0
+damerau_levenshtein    similarity             éèê          éê         OK     2.0 2.0
+damerau_levenshtein    similarity             quick        quikc      OK     4.0 4.0
+damerau_levenshtein    similarity             Saturday     Sunday     OK     5.0 5.0
+damerau_levenshtein    similarity             bookkeeper   bookkeeping OK     8.0 8.0
+damerau_levenshtein    normalized_distance    test         text       OK     0.25 0.25
+damerau_levenshtein    normalized_distance    MARTHA       MARHTA     OK     0.16666666666666666 0.16666666666666666
+damerau_levenshtein    normalized_distance    nelson       neilsen    OK     0.2857142857142857 0.2857142857142857
+damerau_levenshtein    normalized_distance    nelson       neilsen    OK     0.2857142857142857 0.2857142857142857
+damerau_levenshtein    normalized_distance    example      samples    OK     0.42857142857142855 0.42857142857142855
+damerau_levenshtein    normalized_distance                 abc        OK     1.0 1.0
+damerau_levenshtein    normalized_distance    abc                     OK     1.0 1.0
+damerau_levenshtein    normalized_distance                            OK     0.0 0.0
+damerau_levenshtein    normalized_distance    a b          a  b       OK     0.25 0.25
+damerau_levenshtein    normalized_distance    M A RHTA     MARTHA     OK     0.375 0.375
+damerau_levenshtein    normalized_distance    kitten       sitting    OK     0.42857142857142855 0.42857142857142855
+damerau_levenshtein    normalized_distance    flaw         lawn       OK     0.5 0.5
+damerau_levenshtein    normalized_distance      MARTHA     MARTHA     OK     0.4 0.4
+damerau_levenshtein    normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+damerau_levenshtein    normalized_distance    éèê          éê         OK     0.3333333333333333 0.3333333333333333
+damerau_levenshtein    normalized_distance    quick        quikc      OK     0.2 0.2
+damerau_levenshtein    normalized_distance    Saturday     Sunday     OK     0.375 0.375
+damerau_levenshtein    normalized_distance    bookkeeper   bookkeeping OK     0.2727272727272727 0.2727272727272727
+damerau_levenshtein    normalized_similarity  test         text       OK     0.75 0.75
+damerau_levenshtein    normalized_similarity  MARTHA       MARHTA     OK     0.8333333333333334 0.8333333333333334
+damerau_levenshtein    normalized_similarity  nelson       neilsen    OK     0.7142857142857143 0.7142857142857143
+damerau_levenshtein    normalized_similarity  nelson       neilsen    OK     0.7142857142857143 0.7142857142857143
+damerau_levenshtein    normalized_similarity  example      samples    OK     0.5714285714285714 0.5714285714285714
+damerau_levenshtein    normalized_similarity               abc        OK     0.0 0.0
+damerau_levenshtein    normalized_similarity  abc                     OK     0.0 0.0
+damerau_levenshtein    normalized_similarity                          OK     1.0 1.0
+damerau_levenshtein    normalized_similarity  a b          a  b       OK     0.75 0.75
+damerau_levenshtein    normalized_similarity  M A RHTA     MARTHA     OK     0.625 0.625
+damerau_levenshtein    normalized_similarity  kitten       sitting    OK     0.5714285714285714 0.5714285714285714
+damerau_levenshtein    normalized_similarity  flaw         lawn       OK     0.5 0.5
+damerau_levenshtein    normalized_similarity    MARTHA     MARTHA     OK     0.6 0.6
+damerau_levenshtein    normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+damerau_levenshtein    normalized_similarity  éèê          éê         OK     0.6666666666666667 0.6666666666666667
+damerau_levenshtein    normalized_similarity  quick        quikc      OK     0.8 0.8
+damerau_levenshtein    normalized_similarity  Saturday     Sunday     OK     0.625 0.625
+damerau_levenshtein    normalized_similarity  bookkeeper   bookkeeping OK     0.7272727272727273 0.7272727272727273
+hamming                distance               test         text       OK     1.0 1.0
+hamming                distance               MARTHA       MARHTA     OK     2.0 2.0
+hamming                distance               nelson       neilsen    OK     5.0 5.0
+hamming                distance               nelson       neilsen    OK     5.0 5.0
+hamming                distance               example      samples    OK     7.0 7.0
+hamming                distance                            abc        OK     3.0 3.0
+hamming                distance               abc                     OK     3.0 3.0
+hamming                distance                                       OK     0.0 0.0
+hamming                distance               a b          a  b       OK     2.0 2.0
+hamming                distance               M A RHTA     MARTHA     OK     7.0 7.0
+hamming                distance               kitten       sitting    OK     3.0 3.0
+hamming                distance               flaw         lawn       OK     4.0 4.0
+hamming                distance                 MARTHA     MARTHA     OK     10.0 10.0
+hamming                distance               こんにちは        こんにちは      OK     0.0 0.0
+hamming                distance               éèê          éê         OK     2.0 2.0
+hamming                distance               quick        quikc      OK     2.0 2.0
+hamming                distance               Saturday     Sunday     OK     7.0 7.0
+hamming                distance               bookkeeper   bookkeeping OK     3.0 3.0
+hamming                similarity             test         text       OK     3.0 3.0
+hamming                similarity             MARTHA       MARHTA     OK     4.0 4.0
+hamming                similarity             nelson       neilsen    OK     2.0 2.0
+hamming                similarity             nelson       neilsen    OK     2.0 2.0
+hamming                similarity             example      samples    OK     0.0 0.0
+hamming                similarity                          abc        OK     0.0 0.0
+hamming                similarity             abc                     OK     0.0 0.0
+hamming                similarity                                     OK     0.0 0.0
+hamming                similarity             a b          a  b       OK     2.0 2.0
+hamming                similarity             M A RHTA     MARTHA     OK     1.0 1.0
+hamming                similarity             kitten       sitting    OK     4.0 4.0
+hamming                similarity             flaw         lawn       OK     0.0 0.0
+hamming                similarity               MARTHA     MARTHA     OK     0.0 0.0
+hamming                similarity             こんにちは        こんにちは      OK     5.0 5.0
+hamming                similarity             éèê          éê         OK     1.0 1.0
+hamming                similarity             quick        quikc      OK     3.0 3.0
+hamming                similarity             Saturday     Sunday     OK     1.0 1.0
+hamming                similarity             bookkeeper   bookkeeping OK     8.0 8.0
+hamming                normalized_distance    test         text       OK     0.25 0.25
+hamming                normalized_distance    MARTHA       MARHTA     OK     0.3333333333333333 0.3333333333333333
+hamming                normalized_distance    nelson       neilsen    OK     0.7142857142857143 0.7142857142857143
+hamming                normalized_distance    nelson       neilsen    OK     0.7142857142857143 0.7142857142857143
+hamming                normalized_distance    example      samples    OK     1.0 1.0
+hamming                normalized_distance                 abc        OK     1.0 1.0
+hamming                normalized_distance    abc                     OK     1.0 1.0
+hamming                normalized_distance                            OK     0.0 0.0
+hamming                normalized_distance    a b          a  b       OK     0.5 0.5
+hamming                normalized_distance    M A RHTA     MARTHA     OK     0.875 0.875
+hamming                normalized_distance    kitten       sitting    OK     0.42857142857142855 0.42857142857142855
+hamming                normalized_distance    flaw         lawn       OK     1.0 1.0
+hamming                normalized_distance      MARTHA     MARTHA     OK     1.0 1.0
+hamming                normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+hamming                normalized_distance    éèê          éê         OK     0.6666666666666666 0.6666666666666666
+hamming                normalized_distance    quick        quikc      OK     0.4 0.4
+hamming                normalized_distance    Saturday     Sunday     OK     0.875 0.875
+hamming                normalized_distance    bookkeeper   bookkeeping OK     0.2727272727272727 0.2727272727272727
+hamming                normalized_similarity  test         text       OK     0.75 0.75
+hamming                normalized_similarity  MARTHA       MARHTA     OK     0.6666666666666667 0.6666666666666667
+hamming                normalized_similarity  nelson       neilsen    OK     0.2857142857142857 0.2857142857142857
+hamming                normalized_similarity  nelson       neilsen    OK     0.2857142857142857 0.2857142857142857
+hamming                normalized_similarity  example      samples    OK     0.0 0.0
+hamming                normalized_similarity               abc        OK     0.0 0.0
+hamming                normalized_similarity  abc                     OK     0.0 0.0
+hamming                normalized_similarity                          OK     1.0 1.0
+hamming                normalized_similarity  a b          a  b       OK     0.5 0.5
+hamming                normalized_similarity  M A RHTA     MARTHA     OK     0.125 0.125
+hamming                normalized_similarity  kitten       sitting    OK     0.5714285714285714 0.5714285714285714
+hamming                normalized_similarity  flaw         lawn       OK     0.0 0.0
+hamming                normalized_similarity    MARTHA     MARTHA     OK     0.0 0.0
+hamming                normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+hamming                normalized_similarity  éèê          éê         OK     0.33333333333333337 0.33333333333333337
+hamming                normalized_similarity  quick        quikc      OK     0.6 0.6
+hamming                normalized_similarity  Saturday     Sunday     OK     0.125 0.125
+hamming                normalized_similarity  bookkeeper   bookkeeping OK     0.7272727272727273 0.7272727272727273
+gotoh                  distance               test         text       OK     -3.0 -3.0
+gotoh                  distance               MARTHA       MARHTA     OK     -4.0 -4.0
+gotoh                  distance               nelson       neilsen    OK     -4.0 -4.0
+gotoh                  distance               nelson       neilsen    OK     -4.0 -4.0
+gotoh                  distance               example      samples    OK     -3.0 -3.0
+gotoh                  distance                            abc        REF_RAISED 1.8 'upstream raises'
+gotoh                  distance               abc                     REF_RAISED 1.8 'upstream raises'
+gotoh                  distance                                       OK     -0.0 -0.0
+gotoh                  distance               a b          a  b       OK     -2.0 -2.0
+gotoh                  distance               M A RHTA     MARTHA     OK     -2.0 -2.0
+gotoh                  distance               kitten       sitting    OK     -3.0 -3.0
+gotoh                  distance               flaw         lawn       OK     -1.0 -1.0
+gotoh                  distance                 MARTHA     MARTHA     OK     -3.1999999999999997 -3.1999999999999997
+gotoh                  distance               こんにちは        こんにちは      OK     -5.0 -5.0
+gotoh                  distance               éèê          éê         OK     -1.0 -1.0
+gotoh                  distance               quick        quikc      OK     -3.0 -3.0
+gotoh                  distance               Saturday     Sunday     OK     -3.6 -3.6
+gotoh                  distance               bookkeeper   bookkeeping OK     -7.0 -7.0
+gotoh                  similarity             test         text       OK     3.0 3.0
+gotoh                  similarity             MARTHA       MARHTA     OK     4.0 4.0
+gotoh                  similarity             nelson       neilsen    OK     4.0 4.0
+gotoh                  similarity             nelson       neilsen    OK     4.0 4.0
+gotoh                  similarity             example      samples    OK     3.0 3.0
+gotoh                  similarity                          abc        REF_RAISED -1.8 'upstream raises'
+gotoh                  similarity             abc                     REF_RAISED -1.8 'upstream raises'
+gotoh                  similarity                                     OK     0.0 0.0
+gotoh                  similarity             a b          a  b       OK     2.0 2.0
+gotoh                  similarity             M A RHTA     MARTHA     OK     2.0 2.0
+gotoh                  similarity             kitten       sitting    OK     3.0 3.0
+gotoh                  similarity             flaw         lawn       OK     1.0 1.0
+gotoh                  similarity               MARTHA     MARTHA     OK     3.1999999999999997 3.1999999999999997
+gotoh                  similarity             こんにちは        こんにちは      OK     5.0 5.0
+gotoh                  similarity             éèê          éê         OK     1.0 1.0
+gotoh                  similarity             quick        quikc      OK     3.0 3.0
+gotoh                  similarity             Saturday     Sunday     OK     3.6 3.6
+gotoh                  similarity             bookkeeper   bookkeeping OK     7.0 7.0
+gotoh                  normalized_distance    test         text       OK     0.125 0.125
+gotoh                  normalized_distance    MARTHA       MARHTA     OK     0.16666666666666666 0.16666666666666666
+gotoh                  normalized_distance    nelson       neilsen    OK     0.16666666666666666 0.16666666666666666
+gotoh                  normalized_distance    nelson       neilsen    OK     0.16666666666666666 0.16666666666666666
+gotoh                  normalized_distance    example      samples    OK     0.2857142857142857 0.2857142857142857
+gotoh                  normalized_distance                 abc        OK     0.0 0.0
+gotoh                  normalized_distance    abc                     OK     0.0 0.0
+gotoh                  normalized_distance                            OK     0.0 0.0
+gotoh                  normalized_distance    a b          a  b       OK     0.16666666666666666 0.16666666666666666
+gotoh                  normalized_distance    M A RHTA     MARTHA     OK     0.3333333333333333 0.3333333333333333
+gotoh                  normalized_distance    kitten       sitting    OK     0.25 0.25
+gotoh                  normalized_distance    flaw         lawn       OK     0.375 0.375
+gotoh                  normalized_distance      MARTHA     MARTHA     OK     0.23333333333333336 0.23333333333333336
+gotoh                  normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+gotoh                  normalized_distance    éèê          éê         OK     0.25 0.25
+gotoh                  normalized_distance    quick        quikc      OK     0.2 0.2
+gotoh                  normalized_distance    Saturday     Sunday     OK     0.19999999999999998 0.19999999999999998
+gotoh                  normalized_distance    bookkeeper   bookkeeping OK     0.15 0.15
+gotoh                  normalized_similarity  test         text       OK     0.875 0.875
+gotoh                  normalized_similarity  MARTHA       MARHTA     OK     0.8333333333333334 0.8333333333333334
+gotoh                  normalized_similarity  nelson       neilsen    OK     0.8333333333333334 0.8333333333333334
+gotoh                  normalized_similarity  nelson       neilsen    OK     0.8333333333333334 0.8333333333333334
+gotoh                  normalized_similarity  example      samples    OK     0.7142857142857143 0.7142857142857143
+gotoh                  normalized_similarity               abc        OK     1.0 1.0
+gotoh                  normalized_similarity  abc                     OK     1.0 1.0
+gotoh                  normalized_similarity                          OK     1.0 1.0
+gotoh                  normalized_similarity  a b          a  b       OK     0.8333333333333334 0.8333333333333334
+gotoh                  normalized_similarity  M A RHTA     MARTHA     OK     0.6666666666666666 0.6666666666666666
+gotoh                  normalized_similarity  kitten       sitting    OK     0.75 0.75
+gotoh                  normalized_similarity  flaw         lawn       OK     0.625 0.625
+gotoh                  normalized_similarity    MARTHA     MARTHA     OK     0.7666666666666666 0.7666666666666666
+gotoh                  normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+gotoh                  normalized_similarity  éèê          éê         OK     0.75 0.75
+gotoh                  normalized_similarity  quick        quikc      OK     0.8 0.8
+gotoh                  normalized_similarity  Saturday     Sunday     OK     0.7999999999999999 0.7999999999999999
+gotoh                  normalized_similarity  bookkeeper   bookkeeping OK     0.85 0.85
+needleman_wunsch       distance               test         text       OK     -3.0 -3.0
+needleman_wunsch       distance               MARTHA       MARHTA     OK     -4.0 -4.0
+needleman_wunsch       distance               nelson       neilsen    OK     -4.0 -4.0
+needleman_wunsch       distance               nelson       neilsen    OK     -4.0 -4.0
+needleman_wunsch       distance               example      samples    OK     -3.0 -3.0
+needleman_wunsch       distance                            abc        OK     3.0 3.0
+needleman_wunsch       distance               abc                     OK     3.0 3.0
+needleman_wunsch       distance                                       OK     0.0 0.0
+needleman_wunsch       distance               a b          a  b       OK     -2.0 -2.0
+needleman_wunsch       distance               M A RHTA     MARTHA     OK     -2.0 -2.0
+needleman_wunsch       distance               kitten       sitting    OK     -3.0 -3.0
+needleman_wunsch       distance               flaw         lawn       OK     -1.0 -1.0
+needleman_wunsch       distance                 MARTHA     MARTHA     OK     -2.0 -2.0
+needleman_wunsch       distance               こんにちは        こんにちは      OK     -5.0 -5.0
+needleman_wunsch       distance               éèê          éê         OK     -1.0 -1.0
+needleman_wunsch       distance               quick        quikc      OK     -3.0 -3.0
+needleman_wunsch       distance               Saturday     Sunday     OK     -3.0 -3.0
+needleman_wunsch       distance               bookkeeper   bookkeeping OK     -7.0 -7.0
+needleman_wunsch       similarity             test         text       OK     3.0 3.0
+needleman_wunsch       similarity             MARTHA       MARHTA     OK     4.0 4.0
+needleman_wunsch       similarity             nelson       neilsen    OK     4.0 4.0
+needleman_wunsch       similarity             nelson       neilsen    OK     4.0 4.0
+needleman_wunsch       similarity             example      samples    OK     3.0 3.0
+needleman_wunsch       similarity                          abc        OK     -3.0 -3.0
+needleman_wunsch       similarity             abc                     OK     -3.0 -3.0
+needleman_wunsch       similarity                                     OK     -0.0 -0.0
+needleman_wunsch       similarity             a b          a  b       OK     2.0 2.0
+needleman_wunsch       similarity             M A RHTA     MARTHA     OK     2.0 2.0
+needleman_wunsch       similarity             kitten       sitting    OK     3.0 3.0
+needleman_wunsch       similarity             flaw         lawn       OK     1.0 1.0
+needleman_wunsch       similarity               MARTHA     MARTHA     OK     2.0 2.0
+needleman_wunsch       similarity             こんにちは        こんにちは      OK     5.0 5.0
+needleman_wunsch       similarity             éèê          éê         OK     1.0 1.0
+needleman_wunsch       similarity             quick        quikc      OK     3.0 3.0
+needleman_wunsch       similarity             Saturday     Sunday     OK     3.0 3.0
+needleman_wunsch       similarity             bookkeeper   bookkeeping OK     7.0 7.0
+needleman_wunsch       normalized_distance    test         text       OK     0.125 0.125
+needleman_wunsch       normalized_distance    MARTHA       MARHTA     OK     0.16666666666666666 0.16666666666666666
+needleman_wunsch       normalized_distance    nelson       neilsen    OK     0.21428571428571427 0.21428571428571427
+needleman_wunsch       normalized_distance    nelson       neilsen    OK     0.21428571428571427 0.21428571428571427
+needleman_wunsch       normalized_distance    example      samples    OK     0.2857142857142857 0.2857142857142857
+needleman_wunsch       normalized_distance                 abc        OK     1.0 1.0
+needleman_wunsch       normalized_distance    abc                     OK     1.0 1.0
+needleman_wunsch       normalized_distance                            OK     0.0 0.0
+needleman_wunsch       normalized_distance    a b          a  b       OK     0.25 0.25
+needleman_wunsch       normalized_distance    M A RHTA     MARTHA     OK     0.375 0.375
+needleman_wunsch       normalized_distance    kitten       sitting    OK     0.2857142857142857 0.2857142857142857
+needleman_wunsch       normalized_distance    flaw         lawn       OK     0.375 0.375
+needleman_wunsch       normalized_distance      MARTHA     MARTHA     OK     0.4 0.4
+needleman_wunsch       normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+needleman_wunsch       normalized_distance    éèê          éê         OK     0.3333333333333333 0.3333333333333333
+needleman_wunsch       normalized_distance    quick        quikc      OK     0.2 0.2
+needleman_wunsch       normalized_distance    Saturday     Sunday     OK     0.3125 0.3125
+needleman_wunsch       normalized_distance    bookkeeper   bookkeeping OK     0.18181818181818182 0.18181818181818182
+needleman_wunsch       normalized_similarity  test         text       OK     0.875 0.875
+needleman_wunsch       normalized_similarity  MARTHA       MARHTA     OK     0.8333333333333334 0.8333333333333334
+needleman_wunsch       normalized_similarity  nelson       neilsen    OK     0.7857142857142857 0.7857142857142857
+needleman_wunsch       normalized_similarity  nelson       neilsen    OK     0.7857142857142857 0.7857142857142857
+needleman_wunsch       normalized_similarity  example      samples    OK     0.7142857142857143 0.7142857142857143
+needleman_wunsch       normalized_similarity               abc        OK     0.0 0.0
+needleman_wunsch       normalized_similarity  abc                     OK     0.0 0.0
+needleman_wunsch       normalized_similarity                          OK     1.0 1.0
+needleman_wunsch       normalized_similarity  a b          a  b       OK     0.75 0.75
+needleman_wunsch       normalized_similarity  M A RHTA     MARTHA     OK     0.625 0.625
+needleman_wunsch       normalized_similarity  kitten       sitting    OK     0.7142857142857143 0.7142857142857143
+needleman_wunsch       normalized_similarity  flaw         lawn       OK     0.625 0.625
+needleman_wunsch       normalized_similarity    MARTHA     MARTHA     OK     0.6 0.6
+needleman_wunsch       normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+needleman_wunsch       normalized_similarity  éèê          éê         OK     0.6666666666666666 0.6666666666666666
+needleman_wunsch       normalized_similarity  quick        quikc      OK     0.8 0.8
+needleman_wunsch       normalized_similarity  Saturday     Sunday     OK     0.6875 0.6875
+needleman_wunsch       normalized_similarity  bookkeeper   bookkeeping OK     0.8181818181818182 0.8181818181818182
+smith_waterman         distance               test         text       OK     1.0 1.0
+smith_waterman         distance               MARTHA       MARHTA     OK     2.0 2.0
+smith_waterman         distance               nelson       neilsen    OK     2.0 2.0
+smith_waterman         distance               nelson       neilsen    OK     2.0 2.0
+smith_waterman         distance               example      samples    OK     3.0 3.0
+smith_waterman         distance                            abc        OK     0.0 0.0
+smith_waterman         distance               abc                     OK     0.0 0.0
+smith_waterman         distance                                       OK     0.0 0.0
+smith_waterman         distance               a b          a  b       OK     1.0 1.0
+smith_waterman         distance               M A RHTA     MARTHA     OK     4.0 4.0
+smith_waterman         distance               kitten       sitting    OK     3.0 3.0
+smith_waterman         distance               flaw         lawn       OK     2.0 2.0
+smith_waterman         distance                 MARTHA     MARTHA     OK     2.0 2.0
+smith_waterman         distance               こんにちは        こんにちは      OK     0.0 0.0
+smith_waterman         distance               éèê          éê         OK     1.0 1.0
+smith_waterman         distance               quick        quikc      OK     2.0 2.0
+smith_waterman         distance               Saturday     Sunday     OK     2.0 2.0
+smith_waterman         distance               bookkeeper   bookkeeping OK     3.0 3.0
+smith_waterman         similarity             test         text       OK     3.0 3.0
+smith_waterman         similarity             MARTHA       MARHTA     OK     4.0 4.0
+smith_waterman         similarity             nelson       neilsen    OK     4.0 4.0
+smith_waterman         similarity             nelson       neilsen    OK     4.0 4.0
+smith_waterman         similarity             example      samples    OK     4.0 4.0
+smith_waterman         similarity                          abc        OK     0.0 0.0
+smith_waterman         similarity             abc                     OK     0.0 0.0
+smith_waterman         similarity                                     OK     0.0 0.0
+smith_waterman         similarity             a b          a  b       OK     2.0 2.0
+smith_waterman         similarity             M A RHTA     MARTHA     OK     2.0 2.0
+smith_waterman         similarity             kitten       sitting    OK     3.0 3.0
+smith_waterman         similarity             flaw         lawn       OK     2.0 2.0
+smith_waterman         similarity               MARTHA     MARTHA     OK     4.0 4.0
+smith_waterman         similarity             こんにちは        こんにちは      OK     5.0 5.0
+smith_waterman         similarity             éèê          éê         OK     1.0 1.0
+smith_waterman         similarity             quick        quikc      OK     3.0 3.0
+smith_waterman         similarity             Saturday     Sunday     OK     4.0 4.0
+smith_waterman         similarity             bookkeeper   bookkeeping OK     7.0 7.0
+smith_waterman         normalized_distance    test         text       OK     0.25 0.25
+smith_waterman         normalized_distance    MARTHA       MARHTA     OK     0.3333333333333333 0.3333333333333333
+smith_waterman         normalized_distance    nelson       neilsen    OK     0.3333333333333333 0.3333333333333333
+smith_waterman         normalized_distance    nelson       neilsen    OK     0.3333333333333333 0.3333333333333333
+smith_waterman         normalized_distance    example      samples    OK     0.42857142857142855 0.42857142857142855
+smith_waterman         normalized_distance                 abc        OK     0.0 0.0
+smith_waterman         normalized_distance    abc                     OK     0.0 0.0
+smith_waterman         normalized_distance                            OK     0.0 0.0
+smith_waterman         normalized_distance    a b          a  b       OK     0.3333333333333333 0.3333333333333333
+smith_waterman         normalized_distance    M A RHTA     MARTHA     OK     0.6666666666666666 0.6666666666666666
+smith_waterman         normalized_distance    kitten       sitting    OK     0.5 0.5
+smith_waterman         normalized_distance    flaw         lawn       OK     0.5 0.5
+smith_waterman         normalized_distance      MARTHA     MARTHA     OK     0.3333333333333333 0.3333333333333333
+smith_waterman         normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+smith_waterman         normalized_distance    éèê          éê         OK     0.5 0.5
+smith_waterman         normalized_distance    quick        quikc      OK     0.4 0.4
+smith_waterman         normalized_distance    Saturday     Sunday     OK     0.3333333333333333 0.3333333333333333
+smith_waterman         normalized_distance    bookkeeper   bookkeeping OK     0.3 0.3
+smith_waterman         normalized_similarity  test         text       OK     0.75 0.75
+smith_waterman         normalized_similarity  MARTHA       MARHTA     OK     0.6666666666666667 0.6666666666666667
+smith_waterman         normalized_similarity  nelson       neilsen    OK     0.6666666666666667 0.6666666666666667
+smith_waterman         normalized_similarity  nelson       neilsen    OK     0.6666666666666667 0.6666666666666667
+smith_waterman         normalized_similarity  example      samples    OK     0.5714285714285714 0.5714285714285714
+smith_waterman         normalized_similarity               abc        OK     1.0 1.0
+smith_waterman         normalized_similarity  abc                     OK     1.0 1.0
+smith_waterman         normalized_similarity                          OK     1.0 1.0
+smith_waterman         normalized_similarity  a b          a  b       OK     0.6666666666666667 0.6666666666666667
+smith_waterman         normalized_similarity  M A RHTA     MARTHA     OK     0.33333333333333337 0.33333333333333337
+smith_waterman         normalized_similarity  kitten       sitting    OK     0.5 0.5
+smith_waterman         normalized_similarity  flaw         lawn       OK     0.5 0.5
+smith_waterman         normalized_similarity    MARTHA     MARTHA     OK     0.6666666666666667 0.6666666666666667
+smith_waterman         normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+smith_waterman         normalized_similarity  éèê          éê         OK     0.5 0.5
+smith_waterman         normalized_similarity  quick        quikc      OK     0.6 0.6
+smith_waterman         normalized_similarity  Saturday     Sunday     OK     0.6666666666666667 0.6666666666666667
+smith_waterman         normalized_similarity  bookkeeper   bookkeeping OK     0.7 0.7
+length                 distance               test         text       OK     0.0 0.0
+length                 distance               MARTHA       MARHTA     OK     0.0 0.0
+length                 distance               nelson       neilsen    OK     1.0 1.0
+length                 distance               nelson       neilsen    OK     1.0 1.0
+length                 distance               example      samples    OK     0.0 0.0
+length                 distance                            abc        OK     3.0 3.0
+length                 distance               abc                     OK     3.0 3.0
+length                 distance                                       OK     0.0 0.0
+length                 distance               a b          a  b       OK     1.0 1.0
+length                 distance               M A RHTA     MARTHA     OK     2.0 2.0
+length                 distance               kitten       sitting    OK     1.0 1.0
+length                 distance               flaw         lawn       OK     0.0 0.0
+length                 distance                 MARTHA     MARTHA     OK     4.0 4.0
+length                 distance               こんにちは        こんにちは      OK     0.0 0.0
+length                 distance               éèê          éê         OK     1.0 1.0
+length                 distance               quick        quikc      OK     0.0 0.0
+length                 distance               Saturday     Sunday     OK     2.0 2.0
+length                 distance               bookkeeper   bookkeeping OK     1.0 1.0
+length                 similarity             test         text       OK     4.0 4.0
+length                 similarity             MARTHA       MARHTA     OK     6.0 6.0
+length                 similarity             nelson       neilsen    OK     6.0 6.0
+length                 similarity             nelson       neilsen    OK     6.0 6.0
+length                 similarity             example      samples    OK     7.0 7.0
+length                 similarity                          abc        OK     0.0 0.0
+length                 similarity             abc                     OK     0.0 0.0
+length                 similarity                                     OK     0.0 0.0
+length                 similarity             a b          a  b       OK     3.0 3.0
+length                 similarity             M A RHTA     MARTHA     OK     6.0 6.0
+length                 similarity             kitten       sitting    OK     6.0 6.0
+length                 similarity             flaw         lawn       OK     4.0 4.0
+length                 similarity               MARTHA     MARTHA     OK     6.0 6.0
+length                 similarity             こんにちは        こんにちは      OK     5.0 5.0
+length                 similarity             éèê          éê         OK     2.0 2.0
+length                 similarity             quick        quikc      OK     5.0 5.0
+length                 similarity             Saturday     Sunday     OK     6.0 6.0
+length                 similarity             bookkeeper   bookkeeping OK     10.0 10.0
+length                 normalized_distance    test         text       OK     0.0 0.0
+length                 normalized_distance    MARTHA       MARHTA     OK     0.0 0.0
+length                 normalized_distance    nelson       neilsen    OK     0.14285714285714285 0.14285714285714285
+length                 normalized_distance    nelson       neilsen    OK     0.14285714285714285 0.14285714285714285
+length                 normalized_distance    example      samples    OK     0.0 0.0
+length                 normalized_distance                 abc        OK     1.0 1.0
+length                 normalized_distance    abc                     OK     1.0 1.0
+length                 normalized_distance                            OK     0.0 0.0
+length                 normalized_distance    a b          a  b       OK     0.25 0.25
+length                 normalized_distance    M A RHTA     MARTHA     OK     0.25 0.25
+length                 normalized_distance    kitten       sitting    OK     0.14285714285714285 0.14285714285714285
+length                 normalized_distance    flaw         lawn       OK     0.0 0.0
+length                 normalized_distance      MARTHA     MARTHA     OK     0.4 0.4
+length                 normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+length                 normalized_distance    éèê          éê         OK     0.3333333333333333 0.3333333333333333
+length                 normalized_distance    quick        quikc      OK     0.0 0.0
+length                 normalized_distance    Saturday     Sunday     OK     0.25 0.25
+length                 normalized_distance    bookkeeper   bookkeeping OK     0.09090909090909091 0.09090909090909091
+length                 normalized_similarity  test         text       OK     1.0 1.0
+length                 normalized_similarity  MARTHA       MARHTA     OK     1.0 1.0
+length                 normalized_similarity  nelson       neilsen    OK     0.8571428571428572 0.8571428571428572
+length                 normalized_similarity  nelson       neilsen    OK     0.8571428571428572 0.8571428571428572
+length                 normalized_similarity  example      samples    OK     1.0 1.0
+length                 normalized_similarity               abc        OK     0.0 0.0
+length                 normalized_similarity  abc                     OK     0.0 0.0
+length                 normalized_similarity                          OK     1.0 1.0
+length                 normalized_similarity  a b          a  b       OK     0.75 0.75
+length                 normalized_similarity  M A RHTA     MARTHA     OK     0.75 0.75
+length                 normalized_similarity  kitten       sitting    OK     0.8571428571428572 0.8571428571428572
+length                 normalized_similarity  flaw         lawn       OK     1.0 1.0
+length                 normalized_similarity    MARTHA     MARTHA     OK     0.6 0.6
+length                 normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+length                 normalized_similarity  éèê          éê         OK     0.6666666666666667 0.6666666666666667
+length                 normalized_similarity  quick        quikc      OK     1.0 1.0
+length                 normalized_similarity  Saturday     Sunday     OK     0.75 0.75
+length                 normalized_similarity  bookkeeper   bookkeeping OK     0.9090909090909091 0.9090909090909091
+jaro                   distance               test         text       OK     0.16666666666666663 0.16666666666666663
+jaro                   distance               MARTHA       MARHTA     OK     0.05555555555555547 0.05555555555555547
+jaro                   distance               nelson       neilsen    OK     0.1507936507936508 0.1507936507936508
+jaro                   distance               nelson       neilsen    OK     0.1507936507936508 0.1507936507936508
+jaro                   distance               example      samples    OK     0.19047619047619035 0.19047619047619035
+jaro                   distance                            abc        OK     1.0 1.0
+jaro                   distance               abc                     OK     1.0 1.0
+jaro                   distance                                       OK     0.0 0.0
+jaro                   distance               a b          a  b       OK     0.08333333333333337 0.08333333333333337
+jaro                   distance               M A RHTA     MARTHA     OK     0.13888888888888884 0.13888888888888884
+jaro                   distance               kitten       sitting    OK     0.25396825396825395 0.25396825396825395
+jaro                   distance               flaw         lawn       OK     0.16666666666666663 0.16666666666666663
+jaro                   distance                 MARTHA     MARTHA     OK     0.1333333333333333 0.1333333333333333
+jaro                   distance               こんにちは        こんにちは      OK     0.0 0.0
+jaro                   distance               éèê          éê         OK     0.38888888888888895 0.38888888888888895
+jaro                   distance               quick        quikc      OK     0.06666666666666676 0.06666666666666676
+jaro                   distance               Saturday     Sunday     OK     0.24722222222222212 0.24722222222222212
+jaro                   distance               bookkeeper   bookkeeping OK     0.1575757575757576 0.1575757575757576
+jaro                   similarity             test         text       OK     0.8333333333333334 0.8333333333333334
+jaro                   similarity             MARTHA       MARHTA     OK     0.9444444444444445 0.9444444444444445
+jaro                   similarity             nelson       neilsen    OK     0.8492063492063492 0.8492063492063492
+jaro                   similarity             nelson       neilsen    OK     0.8492063492063492 0.8492063492063492
+jaro                   similarity             example      samples    OK     0.8095238095238096 0.8095238095238096
+jaro                   similarity                          abc        OK     0.0 0.0
+jaro                   similarity             abc                     OK     0.0 0.0
+jaro                   similarity                                     OK     1.0 1.0
+jaro                   similarity             a b          a  b       OK     0.9166666666666666 0.9166666666666666
+jaro                   similarity             M A RHTA     MARTHA     OK     0.8611111111111112 0.8611111111111112
+jaro                   similarity             kitten       sitting    OK     0.746031746031746 0.746031746031746
+jaro                   similarity             flaw         lawn       OK     0.8333333333333334 0.8333333333333334
+jaro                   similarity               MARTHA     MARTHA     OK     0.8666666666666667 0.8666666666666667
+jaro                   similarity             こんにちは        こんにちは      OK     1.0 1.0
+jaro                   similarity             éèê          éê         OK     0.611111111111111 0.611111111111111
+jaro                   similarity             quick        quikc      OK     0.9333333333333332 0.9333333333333332
+jaro                   similarity             Saturday     Sunday     OK     0.7527777777777779 0.7527777777777779
+jaro                   similarity             bookkeeper   bookkeeping OK     0.8424242424242424 0.8424242424242424
+jaro                   normalized_distance    test         text       OK     0.16666666666666663 0.16666666666666663
+jaro                   normalized_distance    MARTHA       MARHTA     OK     0.05555555555555547 0.05555555555555547
+jaro                   normalized_distance    nelson       neilsen    OK     0.1507936507936508 0.1507936507936508
+jaro                   normalized_distance    nelson       neilsen    OK     0.1507936507936508 0.1507936507936508
+jaro                   normalized_distance    example      samples    OK     0.19047619047619035 0.19047619047619035
+jaro                   normalized_distance                 abc        OK     1.0 1.0
+jaro                   normalized_distance    abc                     OK     1.0 1.0
+jaro                   normalized_distance                            OK     0.0 0.0
+jaro                   normalized_distance    a b          a  b       OK     0.08333333333333337 0.08333333333333337
+jaro                   normalized_distance    M A RHTA     MARTHA     OK     0.13888888888888884 0.13888888888888884
+jaro                   normalized_distance    kitten       sitting    OK     0.25396825396825395 0.25396825396825395
+jaro                   normalized_distance    flaw         lawn       OK     0.16666666666666663 0.16666666666666663
+jaro                   normalized_distance      MARTHA     MARTHA     OK     0.1333333333333333 0.1333333333333333
+jaro                   normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+jaro                   normalized_distance    éèê          éê         OK     0.38888888888888895 0.38888888888888895
+jaro                   normalized_distance    quick        quikc      OK     0.06666666666666676 0.06666666666666676
+jaro                   normalized_distance    Saturday     Sunday     OK     0.24722222222222212 0.24722222222222212
+jaro                   normalized_distance    bookkeeper   bookkeeping OK     0.1575757575757576 0.1575757575757576
+jaro                   normalized_similarity  test         text       OK     0.8333333333333334 0.8333333333333334
+jaro                   normalized_similarity  MARTHA       MARHTA     OK     0.9444444444444445 0.9444444444444445
+jaro                   normalized_similarity  nelson       neilsen    OK     0.8492063492063492 0.8492063492063492
+jaro                   normalized_similarity  nelson       neilsen    OK     0.8492063492063492 0.8492063492063492
+jaro                   normalized_similarity  example      samples    OK     0.8095238095238096 0.8095238095238096
+jaro                   normalized_similarity               abc        OK     0.0 0.0
+jaro                   normalized_similarity  abc                     OK     0.0 0.0
+jaro                   normalized_similarity                          OK     1.0 1.0
+jaro                   normalized_similarity  a b          a  b       OK     0.9166666666666666 0.9166666666666666
+jaro                   normalized_similarity  M A RHTA     MARTHA     OK     0.8611111111111112 0.8611111111111112
+jaro                   normalized_similarity  kitten       sitting    OK     0.746031746031746 0.746031746031746
+jaro                   normalized_similarity  flaw         lawn       OK     0.8333333333333334 0.8333333333333334
+jaro                   normalized_similarity    MARTHA     MARTHA     OK     0.8666666666666667 0.8666666666666667
+jaro                   normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+jaro                   normalized_similarity  éèê          éê         OK     0.611111111111111 0.611111111111111
+jaro                   normalized_similarity  quick        quikc      OK     0.9333333333333332 0.9333333333333332
+jaro                   normalized_similarity  Saturday     Sunday     OK     0.7527777777777779 0.7527777777777779
+jaro                   normalized_similarity  bookkeeper   bookkeeping OK     0.8424242424242424 0.8424242424242424
+jaro_winkler           distance               test         text       OK     0.1333333333333333 0.1333333333333333
+jaro_winkler           distance               MARTHA       MARHTA     OK     0.03888888888888886 0.03888888888888886
+jaro_winkler           distance               nelson       neilsen    OK     0.12063492063492065 0.12063492063492065
+jaro_winkler           distance               nelson       neilsen    OK     0.12063492063492065 0.12063492063492065
+jaro_winkler           distance               example      samples    OK     0.19047619047619035 0.19047619047619035
+jaro_winkler           distance                            abc        OK     1.0 1.0
+jaro_winkler           distance               abc                     OK     1.0 1.0
+jaro_winkler           distance                                       OK     0.0 0.0
+jaro_winkler           distance               a b          a  b       OK     0.06666666666666665 0.06666666666666665
+jaro_winkler           distance               M A RHTA     MARTHA     OK     0.125 0.125
+jaro_winkler           distance               kitten       sitting    OK     0.25396825396825395 0.25396825396825395
+jaro_winkler           distance               flaw         lawn       OK     0.16666666666666663 0.16666666666666663
+jaro_winkler           distance                 MARTHA     MARTHA     OK     0.1333333333333333 0.1333333333333333
+jaro_winkler           distance               こんにちは        こんにちは      OK     0.0 0.0
+jaro_winkler           distance               éèê          éê         OK     0.38888888888888895 0.38888888888888895
+jaro_winkler           distance               quick        quikc      OK     0.046666666666666745 0.046666666666666745
+jaro_winkler           distance               Saturday     Sunday     OK     0.22249999999999992 0.22249999999999992
+jaro_winkler           distance               bookkeeper   bookkeeping OK     0.0945454545454546 0.0945454545454546
+jaro_winkler           similarity             test         text       OK     0.8666666666666667 0.8666666666666667
+jaro_winkler           similarity             MARTHA       MARHTA     OK     0.9611111111111111 0.9611111111111111
+jaro_winkler           similarity             nelson       neilsen    OK     0.8793650793650793 0.8793650793650793
+jaro_winkler           similarity             nelson       neilsen    OK     0.8793650793650793 0.8793650793650793
+jaro_winkler           similarity             example      samples    OK     0.8095238095238096 0.8095238095238096
+jaro_winkler           similarity                          abc        OK     0.0 0.0
+jaro_winkler           similarity             abc                     OK     0.0 0.0
+jaro_winkler           similarity                                     OK     1.0 1.0
+jaro_winkler           similarity             a b          a  b       OK     0.9333333333333333 0.9333333333333333
+jaro_winkler           similarity             M A RHTA     MARTHA     OK     0.875 0.875
+jaro_winkler           similarity             kitten       sitting    OK     0.746031746031746 0.746031746031746
+jaro_winkler           similarity             flaw         lawn       OK     0.8333333333333334 0.8333333333333334
+jaro_winkler           similarity               MARTHA     MARTHA     OK     0.8666666666666667 0.8666666666666667
+jaro_winkler           similarity             こんにちは        こんにちは      OK     1.0 1.0
+jaro_winkler           similarity             éèê          éê         OK     0.611111111111111 0.611111111111111
+jaro_winkler           similarity             quick        quikc      OK     0.9533333333333333 0.9533333333333333
+jaro_winkler           similarity             Saturday     Sunday     OK     0.7775000000000001 0.7775000000000001
+jaro_winkler           similarity             bookkeeper   bookkeeping OK     0.9054545454545454 0.9054545454545454
+jaro_winkler           normalized_distance    test         text       OK     0.1333333333333333 0.1333333333333333
+jaro_winkler           normalized_distance    MARTHA       MARHTA     OK     0.03888888888888886 0.03888888888888886
+jaro_winkler           normalized_distance    nelson       neilsen    OK     0.12063492063492065 0.12063492063492065
+jaro_winkler           normalized_distance    nelson       neilsen    OK     0.12063492063492065 0.12063492063492065
+jaro_winkler           normalized_distance    example      samples    OK     0.19047619047619035 0.19047619047619035
+jaro_winkler           normalized_distance                 abc        OK     1.0 1.0
+jaro_winkler           normalized_distance    abc                     OK     1.0 1.0
+jaro_winkler           normalized_distance                            OK     0.0 0.0
+jaro_winkler           normalized_distance    a b          a  b       OK     0.06666666666666665 0.06666666666666665
+jaro_winkler           normalized_distance    M A RHTA     MARTHA     OK     0.125 0.125
+jaro_winkler           normalized_distance    kitten       sitting    OK     0.25396825396825395 0.25396825396825395
+jaro_winkler           normalized_distance    flaw         lawn       OK     0.16666666666666663 0.16666666666666663
+jaro_winkler           normalized_distance      MARTHA     MARTHA     OK     0.1333333333333333 0.1333333333333333
+jaro_winkler           normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+jaro_winkler           normalized_distance    éèê          éê         OK     0.38888888888888895 0.38888888888888895
+jaro_winkler           normalized_distance    quick        quikc      OK     0.046666666666666745 0.046666666666666745
+jaro_winkler           normalized_distance    Saturday     Sunday     OK     0.22249999999999992 0.22249999999999992
+jaro_winkler           normalized_distance    bookkeeper   bookkeeping OK     0.0945454545454546 0.0945454545454546
+jaro_winkler           normalized_similarity  test         text       OK     0.8666666666666667 0.8666666666666667
+jaro_winkler           normalized_similarity  MARTHA       MARHTA     OK     0.9611111111111111 0.9611111111111111
+jaro_winkler           normalized_similarity  nelson       neilsen    OK     0.8793650793650793 0.8793650793650793
+jaro_winkler           normalized_similarity  nelson       neilsen    OK     0.8793650793650793 0.8793650793650793
+jaro_winkler           normalized_similarity  example      samples    OK     0.8095238095238096 0.8095238095238096
+jaro_winkler           normalized_similarity               abc        OK     0.0 0.0
+jaro_winkler           normalized_similarity  abc                     OK     0.0 0.0
+jaro_winkler           normalized_similarity                          OK     1.0 1.0
+jaro_winkler           normalized_similarity  a b          a  b       OK     0.9333333333333333 0.9333333333333333
+jaro_winkler           normalized_similarity  M A RHTA     MARTHA     OK     0.875 0.875
+jaro_winkler           normalized_similarity  kitten       sitting    OK     0.746031746031746 0.746031746031746
+jaro_winkler           normalized_similarity  flaw         lawn       OK     0.8333333333333334 0.8333333333333334
+jaro_winkler           normalized_similarity    MARTHA     MARTHA     OK     0.8666666666666667 0.8666666666666667
+jaro_winkler           normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+jaro_winkler           normalized_similarity  éèê          éê         OK     0.611111111111111 0.611111111111111
+jaro_winkler           normalized_similarity  quick        quikc      OK     0.9533333333333333 0.9533333333333333
+jaro_winkler           normalized_similarity  Saturday     Sunday     OK     0.7775000000000001 0.7775000000000001
+jaro_winkler           normalized_similarity  bookkeeper   bookkeeping OK     0.9054545454545454 0.9054545454545454
+strcmp95               distance               test         text       OK     0.09333333333333338 0.09333333333333338
+strcmp95               distance               MARTHA       MARHTA     OK     0.03888888888888886 0.03888888888888886
+strcmp95               distance               nelson       neilsen    OK     0.09587301587301589 0.09587301587301589
+strcmp95               distance               nelson       neilsen    OK     0.09587301587301589 0.09587301587301589
+strcmp95               distance               example      samples    OK     0.16190476190476188 0.16190476190476188
+strcmp95               distance                            abc        OK     1.0 1.0
+strcmp95               distance               abc                     OK     1.0 1.0
+strcmp95               distance                                       OK     0.0 0.0
+strcmp95               distance               a b          a  b       OK     0.06666666666666665 0.06666666666666665
+strcmp95               distance               M A RHTA     MARTHA     OK     0.125 0.125
+strcmp95               distance               kitten       sitting    OK     0.2230158730158731 0.2230158730158731
+strcmp95               distance               flaw         lawn       OK     0.16666666666666663 0.16666666666666663
+strcmp95               distance                 MARTHA     MARTHA     OK     0.0 0.0
+strcmp95               distance               こんにちは        こんにちは      OK     0.0 0.0
+strcmp95               distance               éèê          éê         OK     0.38888888888888895 0.38888888888888895
+strcmp95               distance               quick        quikc      OK     0.046666666666666745 0.046666666666666745
+strcmp95               distance               Saturday     Sunday     OK     0.22249999999999992 0.22249999999999992
+strcmp95               distance               bookkeeper   bookkeeping OK     0.083090909090909 0.083090909090909
+strcmp95               similarity             test         text       OK     0.9066666666666666 0.9066666666666666
+strcmp95               similarity             MARTHA       MARHTA     OK     0.9611111111111111 0.9611111111111111
+strcmp95               similarity             nelson       neilsen    OK     0.9041269841269841 0.9041269841269841
+strcmp95               similarity             nelson       neilsen    OK     0.9041269841269841 0.9041269841269841
+strcmp95               similarity             example      samples    OK     0.8380952380952381 0.8380952380952381
+strcmp95               similarity                          abc        OK     0.0 0.0
+strcmp95               similarity             abc                     OK     0.0 0.0
+strcmp95               similarity                                     OK     1.0 1.0
+strcmp95               similarity             a b          a  b       OK     0.9333333333333333 0.9333333333333333
+strcmp95               similarity             M A RHTA     MARTHA     OK     0.875 0.875
+strcmp95               similarity             kitten       sitting    OK     0.7769841269841269 0.7769841269841269
+strcmp95               similarity             flaw         lawn       OK     0.8333333333333334 0.8333333333333334
+strcmp95               similarity               MARTHA     MARTHA     OK     1.0 1.0
+strcmp95               similarity             こんにちは        こんにちは      OK     1.0 1.0
+strcmp95               similarity             éèê          éê         OK     0.611111111111111 0.611111111111111
+strcmp95               similarity             quick        quikc      OK     0.9533333333333333 0.9533333333333333
+strcmp95               similarity             Saturday     Sunday     OK     0.7775000000000001 0.7775000000000001
+strcmp95               similarity             bookkeeper   bookkeeping OK     0.916909090909091 0.916909090909091
+strcmp95               normalized_distance    test         text       OK     0.09333333333333338 0.09333333333333338
+strcmp95               normalized_distance    MARTHA       MARHTA     OK     0.03888888888888886 0.03888888888888886
+strcmp95               normalized_distance    nelson       neilsen    OK     0.09587301587301589 0.09587301587301589
+strcmp95               normalized_distance    nelson       neilsen    OK     0.09587301587301589 0.09587301587301589
+strcmp95               normalized_distance    example      samples    OK     0.16190476190476188 0.16190476190476188
+strcmp95               normalized_distance                 abc        OK     1.0 1.0
+strcmp95               normalized_distance    abc                     OK     1.0 1.0
+strcmp95               normalized_distance                            OK     0.0 0.0
+strcmp95               normalized_distance    a b          a  b       OK     0.06666666666666665 0.06666666666666665
+strcmp95               normalized_distance    M A RHTA     MARTHA     OK     0.125 0.125
+strcmp95               normalized_distance    kitten       sitting    OK     0.2230158730158731 0.2230158730158731
+strcmp95               normalized_distance    flaw         lawn       OK     0.16666666666666663 0.16666666666666663
+strcmp95               normalized_distance      MARTHA     MARTHA     OK     0.0 0.0
+strcmp95               normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+strcmp95               normalized_distance    éèê          éê         OK     0.38888888888888895 0.38888888888888895
+strcmp95               normalized_distance    quick        quikc      OK     0.046666666666666745 0.046666666666666745
+strcmp95               normalized_distance    Saturday     Sunday     OK     0.22249999999999992 0.22249999999999992
+strcmp95               normalized_distance    bookkeeper   bookkeeping OK     0.083090909090909 0.083090909090909
+strcmp95               normalized_similarity  test         text       OK     0.9066666666666666 0.9066666666666666
+strcmp95               normalized_similarity  MARTHA       MARHTA     OK     0.9611111111111111 0.9611111111111111
+strcmp95               normalized_similarity  nelson       neilsen    OK     0.9041269841269841 0.9041269841269841
+strcmp95               normalized_similarity  nelson       neilsen    OK     0.9041269841269841 0.9041269841269841
+strcmp95               normalized_similarity  example      samples    OK     0.8380952380952381 0.8380952380952381
+strcmp95               normalized_similarity               abc        OK     0.0 0.0
+strcmp95               normalized_similarity  abc                     OK     0.0 0.0
+strcmp95               normalized_similarity                          OK     1.0 1.0
+strcmp95               normalized_similarity  a b          a  b       OK     0.9333333333333333 0.9333333333333333
+strcmp95               normalized_similarity  M A RHTA     MARTHA     OK     0.875 0.875
+strcmp95               normalized_similarity  kitten       sitting    OK     0.7769841269841269 0.7769841269841269
+strcmp95               normalized_similarity  flaw         lawn       OK     0.8333333333333334 0.8333333333333334
+strcmp95               normalized_similarity    MARTHA     MARTHA     OK     1.0 1.0
+strcmp95               normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+strcmp95               normalized_similarity  éèê          éê         OK     0.611111111111111 0.611111111111111
+strcmp95               normalized_similarity  quick        quikc      OK     0.9533333333333333 0.9533333333333333
+strcmp95               normalized_similarity  Saturday     Sunday     OK     0.7775000000000001 0.7775000000000001
+strcmp95               normalized_similarity  bookkeeper   bookkeeping OK     0.916909090909091 0.916909090909091
+mlipns                 distance               test         text       OK     0.0 0.0
+mlipns                 distance               MARTHA       MARHTA     OK     0.0 0.0
+mlipns                 distance               nelson       neilsen    OK     1.0 1.0
+mlipns                 distance               nelson       neilsen    OK     1.0 1.0
+mlipns                 distance               example      samples    OK     1.0 1.0
+mlipns                 distance                            abc        OK     1.0 1.0
+mlipns                 distance               abc                     OK     1.0 1.0
+mlipns                 distance                                       OK     0.0 0.0
+mlipns                 distance               a b          a  b       OK     0.0 0.0
+mlipns                 distance               M A RHTA     MARTHA     OK     1.0 1.0
+mlipns                 distance               kitten       sitting    OK     0.0 0.0
+mlipns                 distance               flaw         lawn       OK     1.0 1.0
+mlipns                 distance                 MARTHA     MARTHA     OK     1.0 1.0
+mlipns                 distance               こんにちは        こんにちは      OK     0.0 0.0
+mlipns                 distance               éèê          éê         OK     0.0 0.0
+mlipns                 distance               quick        quikc      OK     0.0 0.0
+mlipns                 distance               Saturday     Sunday     OK     1.0 1.0
+mlipns                 distance               bookkeeper   bookkeeping OK     0.0 0.0
+mlipns                 similarity             test         text       OK     1.0 1.0
+mlipns                 similarity             MARTHA       MARHTA     OK     1.0 1.0
+mlipns                 similarity             nelson       neilsen    OK     0.0 0.0
+mlipns                 similarity             nelson       neilsen    OK     0.0 0.0
+mlipns                 similarity             example      samples    OK     0.0 0.0
+mlipns                 similarity                          abc        OK     0.0 0.0
+mlipns                 similarity             abc                     OK     0.0 0.0
+mlipns                 similarity                                     OK     1.0 1.0
+mlipns                 similarity             a b          a  b       OK     1.0 1.0
+mlipns                 similarity             M A RHTA     MARTHA     OK     0.0 0.0
+mlipns                 similarity             kitten       sitting    OK     1.0 1.0
+mlipns                 similarity             flaw         lawn       OK     0.0 0.0
+mlipns                 similarity               MARTHA     MARTHA     OK     0.0 0.0
+mlipns                 similarity             こんにちは        こんにちは      OK     1.0 1.0
+mlipns                 similarity             éèê          éê         OK     1.0 1.0
+mlipns                 similarity             quick        quikc      OK     1.0 1.0
+mlipns                 similarity             Saturday     Sunday     OK     0.0 0.0
+mlipns                 similarity             bookkeeper   bookkeeping OK     1.0 1.0
+mlipns                 normalized_distance    test         text       OK     0.0 0.0
+mlipns                 normalized_distance    MARTHA       MARHTA     OK     0.0 0.0
+mlipns                 normalized_distance    nelson       neilsen    OK     1.0 1.0
+mlipns                 normalized_distance    nelson       neilsen    OK     1.0 1.0
+mlipns                 normalized_distance    example      samples    OK     1.0 1.0
+mlipns                 normalized_distance                 abc        OK     1.0 1.0
+mlipns                 normalized_distance    abc                     OK     1.0 1.0
+mlipns                 normalized_distance                            OK     0.0 0.0
+mlipns                 normalized_distance    a b          a  b       OK     0.0 0.0
+mlipns                 normalized_distance    M A RHTA     MARTHA     OK     1.0 1.0
+mlipns                 normalized_distance    kitten       sitting    OK     0.0 0.0
+mlipns                 normalized_distance    flaw         lawn       OK     1.0 1.0
+mlipns                 normalized_distance      MARTHA     MARTHA     OK     1.0 1.0
+mlipns                 normalized_distance    こんにちは        こんにちは      OK     0.0 0.0
+mlipns                 normalized_distance    éèê          éê         OK     0.0 0.0
+mlipns                 normalized_distance    quick        quikc      OK     0.0 0.0
+mlipns                 normalized_distance    Saturday     Sunday     OK     1.0 1.0
+mlipns                 normalized_distance    bookkeeper   bookkeeping OK     0.0 0.0
+mlipns                 normalized_similarity  test         text       OK     1.0 1.0
+mlipns                 normalized_similarity  MARTHA       MARHTA     OK     1.0 1.0
+mlipns                 normalized_similarity  nelson       neilsen    OK     0.0 0.0
+mlipns                 normalized_similarity  nelson       neilsen    OK     0.0 0.0
+mlipns                 normalized_similarity  example      samples    OK     0.0 0.0
+mlipns                 normalized_similarity               abc        OK     0.0 0.0
+mlipns                 normalized_similarity  abc                     OK     0.0 0.0
+mlipns                 normalized_similarity                          OK     1.0 1.0
+mlipns                 normalized_similarity  a b          a  b       OK     1.0 1.0
+mlipns                 normalized_similarity  M A RHTA     MARTHA     OK     0.0 0.0
+mlipns                 normalized_similarity  kitten       sitting    OK     1.0 1.0
+mlipns                 normalized_similarity  flaw         lawn       OK     0.0 0.0
+mlipns                 normalized_similarity    MARTHA     MARTHA     OK     0.0 0.0
+mlipns                 normalized_similarity  こんにちは        こんにちは      OK     1.0 1.0
+mlipns                 normalized_similarity  éèê          éê         OK     1.0 1.0
+mlipns                 normalized_similarity  quick        quikc      OK     1.0 1.0
+mlipns                 normalized_similarity  Saturday     Sunday     OK     0.0 0.0
+mlipns                 normalized_similarity  bookkeeper   bookkeeping OK     1.0 1.0
+
+# total: 792, numeric DIFFs: 0, reference-raised edge: 4

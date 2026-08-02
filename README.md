@@ -87,6 +87,12 @@ Three layers, weakest to strongest:
    commit with `scripts/fetch_reference.ps1` (or `.sh`).
 3. **Port tests.** `tests/port/` holds additional tests we wrote (native Rust unit tests plus
    adapter-level checks) covering edge cases not exercised upstream.
+4. **Honest-numbers verifiers.** `scripts/honest_report.py` counts `unsafe` blocks per crate
+   (0 in `tdcore`/`pyapi`/`tdc`, 10 in the `codec` C wrapper) and the test pass rate per file
+   (400/400, 100%); `scripts/coverage_diff.py` measures statement coverage of
+   `textdistance.algorithms` on the reference vs the port (`bench/coverage.json`);
+   `scripts/cli_diff.py` diffs the `tdc` CLI against the reference on a shared 792-case input
+   set (0 numeric diffs, 4 cases where the original raises). See `bench/` for the outputs.
 
 Any divergence from the original is documented in `DECISIONS.md` with its rationale. The
 numbers reported here and in `bench/` are honest: measured, with methodology, including where

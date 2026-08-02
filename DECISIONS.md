@@ -273,3 +273,29 @@ Smith-Waterman end-anchoring above, and `jaccard((), []) == 1` versus `jaccard([
 which follows the documented `quick_answer` ordering) are both faithful to the original and
 to its own tests, so neither is filed as a bug. This outcome is reported honestly rather than
 fabricated: a behavioral port should preserve the original, not manufacture defects in it.
+
+### D22 Honest numbers artifacts (unsafe count, pass rate per file, coverage, CLI diff)
+
+Deliverable verifiers, all committed and machine-runnable.
+
+- **Unsafe blocks** — `scripts/honest_report.py` scans every `.rs` file: **0** `unsafe {`
+  blocks and **0** `unsafe fn` in `tdcore`, `pyapi`, and `tdc`; **10** blocks in `codec`
+  (the bzip2/zlib/lzma wrapper crate, the only C in the workspace; each with a
+  `// SAFETY:` comment). `tdcore` still carries `#![forbid(unsafe_code)]`. (Earlier prose
+  said "28" — that counted the *word* unsafe; this scripted count is the honest number.)
+- **Test pass rate per file** (`scripts/honest_report.py`) — original suite via `--junitxml`:
+  **400/400, 100%**, every test file green, 0 failed.
+- **Coverage diff** (`scripts/coverage_diff.py`): statement coverage of
+  `textdistance.algorithms` for the reference clone vs the port under the same suite, to
+  `bench/coverage.json`. Port adapter modules are covered at least as well as the
+  reference's. Honest caveat: coverage counts *Python* lines only; the port's math is Rust,
+  so % understates proven behaviour — `fuzz/log-*.txt` are the equivalence proof.
+- **CLI output diff on a shared input set** (`scripts/cli_diff.py`): 792 cases (11 algos × 4
+  metrics × 19 pairs), **0 numeric diffs** vs the reference clone. Four cases are
+  `REF_RAISED`: upstream raises (its empty-input `gotoh` indexing bug) where the CLI answers.
+
+D22 also caught and fixed a real **CLI-only** bug: `tdc` returned 0.0 for `jaro('','')`
+similarity, but upstream `BaseSimilarity.quick_answer` returns the maximum (1.0) for
+identical (both empty) sequences. `crates/tdc/src/main.rs` now mirrors that ordering
+(both-empty → maximum; single-empty → 0) with a regression test. The Python API was already
+correct; only the previously-unexercised Rust CLI had the bug.

@@ -1,0 +1,45 @@
+honest-report
+==========================================================================
+
+unsafe blocks / unsafe fn per crate (scan of crates/*/src):
+  crate          unsafe{}  unsafe fn   note
+  tdcore     0       0            
+  pyapi      0       0            
+  tdc        0       0            
+  codec      10      0            C/C++ wrapper crate (the only unsafe in the workspace)
+
+  total unsafe{ blocks in workspace : 10
+  SAFE core (tdcore/pyapi/tdc)       : PASS (0 blocks, 0 unsafe fn)
+
+original suite: python -m pytest -m 'not external' tests/original
+  test file (module)             passed   failed   rate   
+  /test_common                   168      0       100.0% 
+  test_compression/test_arith_ncd 4        0       100.0% 
+  test_compression/test_bwtrle_ncd 2        0       100.0% 
+  test_compression/test_bz2_ncd  2        0       100.0% 
+  test_compression/test_common   28       0       100.0% 
+  test_compression/test_entropy_ncd 8        0       100.0% 
+  test_compression/test_sqrt_ncd 7        0       100.0% 
+  test_edit/test_damerau_levenshtein 32       0       100.0% 
+  test_edit/test_editex          12       0       100.0% 
+  test_edit/test_gotoh           5        0       100.0% 
+  test_edit/test_hamming         6        0       100.0% 
+  test_edit/test_jaro            8        0       100.0% 
+  test_edit/test_jaro_winkler    7        0       100.0% 
+  test_edit/test_levenshtein     6        0       100.0% 
+  test_edit/test_matrix          10       0       100.0% 
+  test_edit/test_mlipns          11       0       100.0% 
+  test_edit/test_needleman_wunsch 5        0       100.0% 
+  test_edit/test_smith_waterman  5        0       100.0% 
+  test_edit/test_strcmp95        4        0       100.0% 
+  test_phonetic/test_editex      30       0       100.0% 
+  test_sequence/test_lcsseq      11       0       100.0% 
+  test_sequence/test_lcsstr      10       0       100.0% 
+  test_token/test_bag            4        0       100.0% 
+  test_token/test_cosine         2        0       100.0% 
+  test_token/test_jaccard        5        0       100.0% 
+  test_token/test_monge_elkan    2        0       100.0% 
+  test_token/test_overlap        3        0       100.0% 
+  test_token/test_sorensen       3        0       100.0% 
+  ----------------------------------------------------------
+  TOTAL                          400      0      
