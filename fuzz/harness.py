@@ -58,14 +58,8 @@ UNICODE = "a\u00e9\u00ea\u00fc\u00f1\u03b1\u03b2\u4e00\u65e5\u672c\u0928\u00f6\u
 # Every algorithm accepts strings; the edit, sequence, simple, and phonetic
 # kernels now process Python code points too (see DECISIONS D20 and D21), so a
 # lone surrogate flows through any of them like any other unit. The binary
-# compressors (bz2/zlib/lzma) encode to UTF-8 and raise UnicodeEncodeError on
-# both sides, which the harness treats as an exact match. The compression
-# family is listed here for documentation only; the surrogate pool covers the
-# whole surface.
-COMPRESSION = {
-    "arith_ncd", "bwtrle_ncd", "bz2_ncd", "entropy_ncd", "lzma_ncd",
-    "rle_ncd", "sqrt_ncd", "zlib_ncd",
-}
+# compressors (bz2/zlib/lzma) encode to UTF-8 first and raise
+# UnicodeEncodeError on both sides, which the harness treats as an exact match.
 
 
 def make_pool(unicode_chance):
