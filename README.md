@@ -154,14 +154,14 @@ algorithm after 200 warmup calls. Throughput is calls per second; the full metho
 
 | algorithm             | port      | original  | speedup |
 | --------------------- | --------- | --------- | ------- |
-| levenshtein           | 225,575   | 37,441    | 6x      |
-| damerau_levenshtein   | 272,012   | 25,702    | 11x     |
-| jaro_winkler          | 292,283   | 119,125   | 2x      |
-| lcsseq                | 393,526   | 32,685    | 12x     |
-| ratcliff_obershelp    | 218,066   | 67,449    | 3x      |
-| jaccard               | 159,426   | 100,343   | 2x      |
-| arith_ncd             | 10,005    | 2,838     | 4x      |
-| bz2_ncd               | 10,258    | 9,390     | 1x      |
+| levenshtein           | 225,575   | 37,441    | 6.0x    |
+| damerau_levenshtein   | 272,012   | 25,702    | 10.6x   |
+| jaro_winkler          | 292,283   | 119,125   | 2.5x    |
+| lcsseq                | 393,526   | 32,685    | 12.0x   |
+| ratcliff_obershelp    | 218,066   | 67,449    | 3.2x    |
+| jaccard               | 159,426   | 100,343   | 1.6x    |
+| arith_ncd             | 10,005    | 2,838     | 3.5x    |
+| bz2_ncd               | 10,258    | 9,390     | 1.1x    |
 
 The dynamic-programming algorithms widen the gap on longer strings: on ~200 character
 sentence pairs, levenshtein runs 331x and lcsseq 199x faster than the original. Importing

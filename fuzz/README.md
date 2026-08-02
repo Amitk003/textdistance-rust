@@ -25,8 +25,11 @@ How the comparison works:
   imported without a module clash; the port lives in the parent process.
 - Inputs: random text, unicode, varying `qval` (including n-gram edge cases), `as_set`,
   list and tuple sequences, numeric and mixed-element sequences, and lone-surrogate strings
-  on the compression family (the only family whose pure coders operate on Python code
-  points; see DECISIONS D20).
+  across every family. Every family processes Python code points (edit, sequence, simple,
+  phonetic, and the pure compression coders; see DECISIONS D20 and D21), so a lone
+  surrogate is drawn into any algorithm; the binary compressors (bz2/zlib/lzma) encode to
+  UTF-8 first and raise `UnicodeEncodeError` on both sides, which the harness treats as an
+  exact match.
 - Outputs compared: `distance`, `similarity`, `normalized_distance`,
   `normalized_similarity`, `maximum`, plus exception behavior (same inputs raise or not).
 - Every batch is serialized to JSON and deserialized identically on both sides, so the port
