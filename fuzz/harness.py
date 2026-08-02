@@ -1,7 +1,7 @@
 """Differential fuzz harness: original textdistance vs this port.
 
 Generates random inputs (text, unicode, varying qval and as_set, list/tuple and
-numeric sequences, and lone-surrogate strings on the compression family), runs
+numeric sequences, and lone-surrogate strings across every family), runs
 the same case through the port in-process and through the original in a
 separate subprocess, and compares every result.
 
@@ -55,11 +55,13 @@ ALGORITHMS = [
 ASCII = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,"
 UNICODE = "a\u00e9\u00ea\u00fc\u00f1\u03b1\u03b2\u4e00\u65e5\u672c\u0928\u00f6\u00e8\u00e2"
 
-# The compression family is the only one whose pure coders operate on Python
-# code points, so lone surrogates are exercised there and there only (the edit,
-# sequence and simple kernels take valid Unicode scalar values; see DECISIONS
-# D20). Bz2/zlib/lzma raise UnicodeEncodeError on both sides, which the harness
-# treats as an exact match.
+# Every algorithm accepts strings; the edit, sequence, simple, and phonetic
+# kernels now process Python code points too (see DECISIONS D20 and D21), so a
+# lone surrogate flows through any of them like any other unit. The binary
+# compressors (bz2/zlib/lzma) encode to UTF-8 and raise UnicodeEncodeError on
+# both sides, which the harness treats as an exact match. The compression
+# family is listed here for documentation only; the surrogate pool covers the
+# whole surface.
 COMPRESSION = {
     "arith_ncd", "bwtrle_ncd", "bz2_ncd", "entropy_ncd", "lzma_ncd",
     "rle_ncd", "sqrt_ncd", "zlib_ncd",
@@ -106,7 +108,7 @@ def random_sequence_deep():
 
 
 def random_surrogate_case(rng):
-    alg = rng.choice(sorted(COMPRESSION))
+    alg = rng.choice(ALGORITHMS)
     qval = rng.choice([None, 1, 1, 2, 3])
     as_set = rng.choice([False, False, True])
     s1 = random_surrogate_string(rng)
