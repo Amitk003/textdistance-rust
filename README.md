@@ -26,9 +26,11 @@ heavy math runs at native speed.
   (`pytest -m "not external"`). A differential fuzz harness compares this port against the
   original Python library over random inputs, covering every exported algorithm (37, including
   `bag` and `lzma_ncd`). The harness itself was repaired when it was found to be skipping most
-  algorithms (see D23); the latest definitive runs after the repair and the parity fixes are
-  59,000 short and 101,400 long cases with **zero divergence**, in addition to the earlier
-  1.75M/1.37M lone-surrogate runs.
+   algorithms (see D23); the latest definitive runs after the repair and the parity fixes are
+   59,000 short and 101,400 long cases with **zero divergence**, in addition to the earlier
+   1.75M/1.37M lone-surrogate runs. Upstream's numpy-only aligners (`NeedlemanWunsch`,
+   `SmithWaterman`, `Gotoh`) are mirrored faithfully: with numpy installed both sides compute;
+   without it both raise the same `ImportError` (see D25).
 - **Safety discipline.** The core crate is compiled with `#![forbid(unsafe_code)]`. The FFI
   layer is the only place a boundary is touched, and it stays as small as possible.
 

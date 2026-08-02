@@ -396,3 +396,41 @@ already handle the lengths correctly, so returning `-gap_open - gap_ext *
 len(s2)` (or `0`/`maximum`) would be consistent with the affine-gap semantics
 and with the other edit metrics' `quick_answer` behavior.
 ```
+
+## D25. The numpy dependency of NeedlemanWunsch / SmithWaterman / Gotoh is mirrored
+
+The CI differential-fuzz smoke step failed on every OS (2025 divergences on
+Ubuntu, seed 20260801) while the identical command locally reported 0. The
+count was a giveaway: 3 × (25000 / 37) ≈ 2027, i.e. exactly three algorithms
+diverging on every case. Those three are `NeedlemanWunsch`, `SmithWaterman`
+and `Gotoh`.
+
+Cause: the reference's DP implementation is numpy-only. At module import it does
+
+    try:
+        import numpy
+    except ImportError:
+        numpy = None
+
+and each of the three `__call__` methods begins with
+
+    if not numpy:
+        raise ImportError('Please, install numpy for <name> measure')
+
+The CI workflow installs only `. pytest hypothesis`, so on the runners numpy
+is absent: the reference raises ImportError on every call while the port's
+Rust kernels returned values, so the harness saw a divergence on 100% of the
+cases for those algorithms. Locally numpy 2.4.6 was present, so both sides
+computed values and matched.
+
+Decision: mirror the dependency in the port rather than just adding numpy to
+the CI install. The port's Rust kernels do not need numpy, but the reference's
+behavior is the contract this project reproduces (D21), so the port now does
+the same guarded import and raises the same `ImportError` with the same
+message before any computation. This keeps the port faithful to the reference
+in *every* environment — with numpy installed both compute, without it both
+raise identically — and makes the CI smoke sensitive to the same inputs as a
+fresh user install. Verified by running both packages with
+`sys.modules['numpy'] = None` and diffing the raised exceptions: byte-identical
+across `__call__` / `distance` / `similarity` / `normalized_distance` /
+`normalized_similarity`, and `maximum` still works without numpy.

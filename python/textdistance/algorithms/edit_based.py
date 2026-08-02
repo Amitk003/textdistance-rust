@@ -3,6 +3,12 @@ from __future__ import annotations
 # built-in
 from typing import Sequence, TypeVar
 
+# upstream requires numpy for NeedlemanWunsch / SmithWaterman / Gotoh; mirror that dependency
+try:
+    import numpy  # noqa: F401
+except ImportError:
+    numpy = None
+
 # app
 from .base import Base as _Base, BaseSimilarity as _BaseSimilarity
 from .types import SimFunc, TestFunc
@@ -250,6 +256,8 @@ class NeedlemanWunsch(_BaseSimilarity):
         return (self.similarity(*sequences) - minimum) / (maximum * 2)
 
     def __call__(self, s1: Sequence[T], s2: Sequence[T]) -> float:
+        if not numpy:
+            raise ImportError('Please, install numpy for Needleman-Wunsch measure')
         s1, s2 = self._get_sequences(s1, s2)
         sim_func = None if self.sim_func is self._ident else self.sim_func
         return _textdistance.needleman_wunsch(s1, s2, self.gap_cost, sim_func)
@@ -282,6 +290,8 @@ class SmithWaterman(_BaseSimilarity):
         return min(map(len, sequences))
 
     def __call__(self, s1: Sequence[T], s2: Sequence[T]) -> float:
+        if not numpy:
+            raise ImportError('Please, install numpy for Smith-Waterman measure')
         s1, s2 = self._get_sequences(s1, s2)
 
         result = self.quick_answer(s1, s2)
@@ -323,6 +333,8 @@ class Gotoh(NeedlemanWunsch):
         return min(map(len, sequences))
 
     def __call__(self, s1: Sequence[T], s2: Sequence[T]) -> float:
+        if not numpy:
+            raise ImportError('Please, install numpy for Gotoh measure')
         s1, s2 = self._get_sequences(s1, s2)
         if (len(s1) == 0) != (len(s2) == 0):
             raise IndexError("index 1 is out of bounds for axis 0 with size 1")
