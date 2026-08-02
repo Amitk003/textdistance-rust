@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 from collections import Counter
 from fractions import Fraction
-from itertools import permutations
+from itertools import groupby, permutations
 from typing import Any, Sequence, TypeVar
 
 # app
@@ -111,8 +111,41 @@ class ArithNCD(_NCDBase):
         return prob_pairs
 
     def _compress(self, data: str) -> Fraction:
-        numerator, denominator = _textdistance.arith_compress(data, self.terminator)
-        return Fraction(numerator, denominator)
+        if isinstance(data, str):
+            numerator, denominator = _textdistance.arith_compress(data, self.terminator)
+            return Fraction(numerator, denominator)
+        # Tokenized input (qval=0 word splits or qval>1 n-grams): the upstream
+        # `_make_probs` re-tokenizes the already-tokenized data, which either
+        # raises (AttributeError/KeyError, matched exactly below) or encodes
+        # the tokens as-is. Mirror upstream so the exception type and value
+        # stay identical.
+        probs = self._make_probs(data)
+        start, end = self._get_range(data=data, probs=probs)
+        output_fraction = Fraction(0, 1)
+        output_denominator = 1
+        while not (start <= output_fraction < end):
+            output_numerator = 1 + ((start.numerator * output_denominator) // start.denominator)
+            output_fraction = Fraction(output_numerator, output_denominator)
+            output_denominator *= 2
+        return output_fraction
+
+    def _get_range(
+        self,
+        data: str,
+        probs: dict[str, tuple[Fraction, Fraction]],
+    ) -> tuple[Fraction, Fraction]:
+        if self.terminator is not None:
+            if self.terminator in data:
+                data = data.replace(self.terminator, '')
+            data += self.terminator
+
+        start = Fraction(0, 1)
+        width = Fraction(1, 1)
+        for char in data:
+            prob_start, prob_width = probs[char]
+            start += prob_start * width
+            width *= prob_width
+        return start, start + width
 
     def _get_size(self, data: str) -> int:
         numerator = self._compress(data).numerator
@@ -128,7 +161,18 @@ class RLENCD(_NCDBase):
     """
 
     def _compress(self, data: Sequence) -> str:
-        return ''.join(map(chr, _textdistance.rle(data)))
+        if isinstance(data, str):
+            return ''.join(map(chr, _textdistance.rle(data)))
+        new_data = []
+        for k, g in groupby(data):
+            n = len(list(g))
+            if n > 2:
+                new_data.append(str(n) + k)
+            elif n == 1:
+                new_data.append(k)
+            else:
+                new_data.append(2 * k)
+        return ''.join(new_data)
 
 
 class BWTRLENCD(RLENCD):
@@ -141,7 +185,20 @@ class BWTRLENCD(RLENCD):
         self.terminator: Any = terminator
 
     def _compress(self, data: str) -> str:
-        return super()._compress(''.join(map(chr, _textdistance.bwt(data, self.terminator))))
+        if isinstance(data, str):
+            return super()._compress(''.join(map(chr, _textdistance.bwt(data, self.terminator))))
+        # Non-string (tokenized list/tuple) input: mirror upstream exactly. It
+        # appends the terminator element and then `type(data)().join(...)`,
+        # which raises AttributeError for lists/tuples (only strings support
+        # `join`), so list/tuple inputs crash upstream the same way.
+        if not data:
+            data = self.terminator
+        elif self.terminator not in data:
+            data += self.terminator
+            modified = sorted(data[i:] + data[:i] for i in range(len(data)))
+            empty = type(data)()
+            data = empty.join(subdata[-1] for subdata in modified)
+        return super()._compress(data)
 
 
 # -- NORMAL COMPRESSORS -- #
@@ -161,7 +218,9 @@ class SqrtNCD(_NCDBase):
         return {element: math.sqrt(count) for element, count in Counter(data).items()}
 
     def _get_size(self, data: Sequence) -> float:
-        return _textdistance.sqrt_size(data)
+        if isinstance(data, str):
+            return _textdistance.sqrt_size(data)
+        return sum(math.sqrt(count) for count in Counter(data).values())
 
 
 class EntropyNCD(_NCDBase):
@@ -179,7 +238,15 @@ class EntropyNCD(_NCDBase):
         self.base = base
 
     def _compress(self, data: Sequence) -> float:
-        return _textdistance.entropy(data, self.base)
+        if isinstance(data, str):
+            return _textdistance.entropy(data, self.base)
+        total_count = len(data)
+        entropy = 0.0
+        for element_count in Counter(data).values():
+            p = element_count / total_count
+            entropy -= p * math.log(p, self.base)
+        assert entropy >= 0
+        return entropy
 
     def _get_size(self, data: Sequence) -> float:
         return self.coef + self._compress(data)

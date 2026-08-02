@@ -267,12 +267,18 @@ preserving the original's behavior, not correcting it.
 The completed migration was re-verified by widening the differential fuzz harness to draw lone
 surrogates across every exported algorithm and re-running both mode sets (std 1,746,200 cases
 and long 1,365,400 cases, zero divergences and zero near-misses, all outputs bit-identical),
-plus the earlier 4.69M-case broad hunt with the full 37-algorithm surface. No genuine,
-defensible bug in the original was found. The two candidate findings investigated (the
+plus the earlier 4.69M-case broad hunt with the full 37-algorithm surface. At the time, no
+genuine, defensible bug in the original was found. The two candidate findings investigated (the
 Smith-Waterman end-anchoring above, and `jaccard((), []) == 1` versus `jaccard([], []) == 0`
-which follows the documented `quick_answer` ordering) are both faithful to the original and
-to its own tests, so neither is filed as a bug. This outcome is reported honestly rather than
-fabricated: a behavioral port should preserve the original, not manufacture defects in it.
+which follows the documented `quick_answer` ordering) are both faithful to the original and to
+its own tests, so neither is filed as a bug.
+
+A later repair pass on the fuzz harness (see D23) surfaced a genuine upstream defect that had
+been hidden by the earlier harness bug: `gotoh` raises `IndexError` on single-empty input. The
+port reproduces it byte-for-byte and the finding is filed separately against upstream (D24).
+This outcome is reported honestly rather than fabricated: a behavioral port should preserve the
+original, not manufacture defects in it — and when a real one is found, it is documented with
+the exact failing input rather than silently "fixed".
 
 ### D22 Honest numbers artifacts (unsafe count, pass rate per file, coverage, CLI diff)
 
@@ -299,3 +305,94 @@ similarity, but upstream `BaseSimilarity.quick_answer` returns the maximum (1.0)
 identical (both empty) sequences. `crates/tdc/src/main.rs` now mirrors that ordering
 (both-empty → maximum; single-empty → 0) with a regression test. The Python API was already
 correct; only the previously-unexercised Rust CLI had the bug.
+
+## D23. Fuzz-harness repair and the parity bugs it surfaced
+
+The differential harness was value-comparing only a fraction of the surface. It passed the same
+constructor kwargs to all 37 algorithms, but 28 of them reject `as_set`, so those cases died of
+`TypeError` at construction and were never compared. The harness now filters kwargs through
+`inspect.signature` (identically for the port and the reference subprocess), strips numpy repr
+wrappers (`np.float64(3.0)`, `np.int64(19)`) in `parse_value`, and compares `maximum` as a
+called value rather than a bound-method repr. This repaired harness is the source of truth for
+the counts below, and it is what surfaced the gotoh defect in D21.
+
+Each repair below was verified with a targeted probe and by re-running both fuzz modes to a
+final state of **0 divergences** (std 59,000 cases, long 101,400 cases; near misses within the
+documented 1e-9 tolerance are numpy-cosmetic and still reported, never hidden).
+
+1. **Gotoh single-empty crash (faithful reproduction).** The original raises `IndexError`
+   when exactly one input is empty: with `len_s1 == 0` the DP matrices have one row, and the
+   column-initialization loop writes `p_mat[1, j]`; with `len_s2 == 0` the row loop writes
+   `q_mat[i, 1]`. Both-empty is fine (no loop runs, result 0). The port previously returned a
+   value; it now raises the identical `IndexError`, pinned by
+   `tests/port/test_surface.py`. The upstream finding is filed separately (D24).
+
+2. **LZMA preset panic.** `lzma_lzma_preset` returned 0 on this toolchain while still writing
+   `dict_size = 8388608` (8 MiB, the preset-6 default), so an assert on the return value
+   panicked at startup. The assert now checks the populated options (`dict_size != 0`) instead
+   of the unreliable bool.
+
+3. **LZMA length divergence (real port bug).** The port compressed through the one-shot
+   `lzma_stream_buffer_encode`; CPython's `lzma.compress` drives the streaming
+   `lzma_stream_encoder` + `lzma_code(LZMA_FINISH)`. Both call the same vendored liblzma
+   5.2.5 (the version CPython 3.11 Windows bundles), but the one-shot API emits a different
+   block header and LZMA2 payload, and for a repeated-string input produced a *different
+   compressed length* (58 vs 62), which changes the NCD value. A Rust experiment proved the
+   streaming path is byte-identical to CPython; the codec now uses it and the 16 fuzz
+   divergences dropped to 0. The codec unit test pins CPython's header-trimmed lengths.
+
+4. **StrCmp95 loops.** The port's matching, transposition, and similarity loops each deviated
+   from the original quirk-for-quirks behavior: the similarity pass rewards only the `adjwt`
+   phonetic pairs (not plain equality), and the transposition pass reuses the matching loop's
+   final `j` and compares against `s2[len_s2 - 1]` when no flagged position is found. The
+   loops were rewritten to mirror the Python line for line; the 12-pair probe went from 10/12
+   to 12/12.
+
+5. **Hamming `None`-padding parity.** For non-string sequences the reference pads with `None`
+   via `zip_longest` and compares with Python `==`, so `None == None` matches. The port's
+   column predicate treated a padded `None` column as an automatic mismatch and, worse,
+   distinguished Rust `Option::None` (padding) from an actual `None` element. The predicate now
+   maps padding to `None` and compares everything through Python `==`. This also fixed MLIPNS,
+   whose `__call__` delegates to `Hamming()`.
+
+6. **BWTRLENCD on list/tuple input.** The reference appends the `'\0'` terminator to a list
+   and then calls `type(data)().join(...)`, which raises `AttributeError` (`list` has no
+   `join`). The port's Rust BWT path returned a value. The port now mirrors the upstream body
+   for non-string inputs and raises the identical `AttributeError`.
+
+Final verification: `cargo test --workspace` green (codec, tdc, tdcore), full pytest
+`428 passed, 30 deselected`.
+
+## D24. Upstream issue: gotoh IndexError on single-empty input
+
+A genuine, reproducible upstream defect. Filing text for `life4/textdistance` (no `gh` CLI on
+the build box, so filed manually):
+
+```
+Title: Gotoh raises IndexError when exactly one input is empty
+
+textdistance 4.5.0, `textdistance.gotoh`.
+
+Repro:
+    >>> textdistance.gotoh('', 'x')
+    IndexError: index 1 is out of bounds for axis 0 with size 1
+
+    >>> textdistance.gotoh('x', '')
+    IndexError: index 1 is out of bounds for axis 0 with size 1
+
+    >>> textdistance.gotoh('', '')   # both empty: fine
+    0.0
+
+Cause: in Gotoh.__call__ (edit_based.py), the DP matrices are
+(numpy.zeros((len_s1+1, len_s2+1))). When len_s1 == 0 the matrix has a single
+row, but the column-initialization loop writes `p_mat[1, j] = -self.gap_open`
+for every j in 1..len_s2, indexing row 1 of a one-row matrix. Symmetrically,
+when len_s2 == 0 the row loop writes `q_mat[i, 1] = -self.gap_open` on a
+one-column matrix.
+
+Expected: like every other metric (and like both-empty), single-empty input
+should return a value rather than crash. `Gotoh.minimum` and `Gotoh.maximum`
+already handle the lengths correctly, so returning `-gap_open - gap_ext *
+len(s2)` (or `0`/`maximum`) would be consistent with the affine-gap semantics
+and with the other edit metrics' `quick_answer` behavior.
+```

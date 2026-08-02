@@ -1,9 +1,9 @@
 differential fuzz run
 mode: std
-seed: 20260802
-duration: 75.0s (requested 75.0s)
-cases: 1746200
+seed: 20260803
+duration: 120.4s (requested 120.0s)
+cases: 59000
 divergences: 0
-near_misses_within_1e-9: 0
+near_misses_within_1e-9: 4140
 algorithms: 37
 tolerance: 1e-09

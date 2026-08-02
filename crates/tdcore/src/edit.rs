@@ -420,8 +420,6 @@ pub fn strcmp95(s1: &[u32], s2: &[u32], long_strings: bool) -> f64 {
         ('G' as u32, 'J' as u32),
     ];
 
-    let phonetic = |a: u32, b: u32| a == b || SP_MX.contains(&(a, b)) || SP_MX.contains(&(b, a));
-
     let len_s1 = s1.len();
     let len_s2 = s2.len();
     let (search_range_initial, minv) = if len_s1 > len_s2 {
@@ -435,15 +433,21 @@ pub fn strcmp95(s1: &[u32], s2: &[u32], long_strings: bool) -> f64 {
 
     let mut num_com = 0usize;
     let yl1 = len_s2 - 1;
+    // `j` is Python's loop variable and keeps its last assigned value across
+    // loops, which upstream's strcmp95 relies on in the transposition pass.
+    let mut j = 0usize;
     for (i, &sc1) in s1.iter().enumerate() {
         let lowlim = i.saturating_sub(search_range);
         let hilim = (i + search_range).min(yl1);
-        for j in lowlim..=hilim {
-            if s2_flag[j] == 0 && s2[j] == sc1 {
-                s2_flag[j] = 1;
-                s1_flag[i] = 1;
-                num_com += 1;
-                break;
+        if hilim >= lowlim {
+            for jj in lowlim..=hilim {
+                j = jj;
+                if s2_flag[jj] == 0 && s2[jj] == sc1 {
+                    s2_flag[jj] = 1;
+                    s1_flag[i] = 1;
+                    num_com += 1;
+                    break;
+                }
             }
         }
     }
@@ -451,21 +455,32 @@ pub fn strcmp95(s1: &[u32], s2: &[u32], long_strings: bool) -> f64 {
         return 0.0;
     }
 
+    // Count transpositions. Mirrors the upstream loop exactly, including its
+    // quirks: when no flagged position is found in `range(k, len_s2)` the
+    // comparison still happens against `s2[len_s2 - 1]` (the last `j` of the
+    // range), and when the range is empty `j` keeps its previous value.
     let mut k = 0usize;
     let mut n_trans = 0usize;
     for (i, &sc1) in s1.iter().enumerate() {
         if s1_flag[i] == 0 {
             continue;
         }
-        let mut j = k;
-        while j < len_s2 && s2_flag[j] == 0 {
-            j += 1;
-        }
-        if j < len_s2 {
-            k = j + 1;
-            if sc1 != s2[j] {
-                n_trans += 1;
+        if k < len_s2 {
+            let mut found = false;
+            for jj in k..len_s2 {
+                j = jj;
+                if s2_flag[jj] != 0 {
+                    k = jj + 1;
+                    found = true;
+                    break;
+                }
             }
+            if !found {
+                j = len_s2 - 1;
+            }
+        }
+        if sc1 != s2[j] {
+            n_trans += 1;
         }
     }
     n_trans /= 2;
@@ -481,7 +496,9 @@ pub fn strcmp95(s1: &[u32], s2: &[u32], long_strings: bool) -> f64 {
                 if s2_flag[j] != 0 || !in_range(s2[j]) {
                     continue;
                 }
-                if !phonetic(s1[i], s2[j]) {
+                // Upstream rewards only the phonetic pairs in `adjwt` (the
+                // sp_mx table); an exact match is NOT rewarded here.
+                if !SP_MX.contains(&(s1[i], s2[j])) && !SP_MX.contains(&(s2[j], s1[i])) {
                     continue;
                 }
                 n_simi += 3;

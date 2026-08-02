@@ -79,12 +79,14 @@ pub fn zlib_compress(data: &[u8]) -> Vec<u8> {
 
 /// lzma/xz-compress `data` the same way `lzma.compress(data)` does, and drop
 /// the 14-byte xz header, mirroring `LZMANCD._compress`.
+///
+/// This intentionally drives the streaming `lzma_stream_encoder` +
+/// `lzma_code(LZMA_FINISH)` API rather than the one-shot
+/// `lzma_stream_buffer_encode` wrapper: CPython's `_lzma` module compresses
+/// through the streaming API, and the two paths produce *different* LZMA2
+/// payloads (and occasionally different lengths) for the same input, which
+/// would break the NCD length parity this crate exists to guarantee.
 pub fn lzma_compress(data: &[u8]) -> Vec<u8> {
-    let bound = unsafe {
-        // SAFETY: `lzma_stream_buffer_bound` is a pure size computation.
-        lzma_sys::lzma_stream_buffer_bound(data.len())
-    };
-    let mut dest = vec![0u8; bound];
     let mut options = unsafe {
         // SAFETY: `lzma_options_lzma` is plain data; zero-initializing is what
         // the C API expects before `lzma_lzma_preset` fills it.
@@ -94,7 +96,12 @@ pub fn lzma_compress(data: &[u8]) -> Vec<u8> {
         // SAFETY: `options` is a valid pointer to `lzma_options_lzma`.
         lzma_sys::lzma_lzma_preset(&mut options, 6)
     };
-    assert_ne!(preset_ret, 0, "lzma preset failed");
+    // `lzma_lzma_preset` does write the preset even though its bool return is
+    // read back as 0 on this toolchain/ABI (observed dict_size == 8388608 == 8
+    // MiB, the preset-6 default, alongside a 0 return). Trust the populated
+    // options instead of the unreliable return value.
+    let _ = preset_ret;
+    assert_ne!(options.dict_size, 0, "lzma preset failed");
     let mut filters = [
         lzma_sys::lzma_filter {
             id: lzma_sys::LZMA_FILTER_LZMA2,
@@ -105,23 +112,61 @@ pub fn lzma_compress(data: &[u8]) -> Vec<u8> {
             options: std::ptr::null_mut(),
         },
     ];
-    let mut out_pos = 0usize;
-    let ret = unsafe {
-        // SAFETY: `filters` is a null-terminated filter chain, `dest` is
-        // `bound` bytes (the xz worst-case bound for `data`), and `out_pos`
-        // is the capacity in/out. liblzma writes at most `bound` bytes.
-        lzma_sys::lzma_stream_buffer_encode(
-            filters.as_mut_ptr(),
-            lzma_sys::LZMA_CHECK_CRC64,
-            std::ptr::null(),
-            data.as_ptr(),
-            data.len(),
-            dest.as_mut_ptr(),
-            &mut out_pos,
-            dest.len(),
-        )
+    let mut stream: lzma_sys::lzma_stream = unsafe {
+        // SAFETY: `lzma_stream` is plain data; zero-initializing is what the C
+        // API expects before `lzma_stream_encoder` fills it.
+        std::mem::zeroed()
     };
-    assert_eq!(ret, lzma_sys::LZMA_OK, "lzma compression failed");
-    dest.truncate(out_pos);
+    let init = unsafe {
+        // SAFETY: `stream` is a valid, zeroed `lzma_stream` and `filters` is a
+        // null-terminated filter chain; check CRC64 is what `lzma.compress`
+        // uses.
+        lzma_sys::lzma_stream_encoder(&mut stream, filters.as_mut_ptr(), lzma_sys::LZMA_CHECK_CRC64)
+    };
+    assert_eq!(init, lzma_sys::LZMA_OK, "lzma encoder init failed");
+    let mut dest = Vec::new();
+    let mut buf = vec![0u8; 64 * 1024];
+    stream.next_in = data.as_ptr() as *mut u8;
+    stream.avail_in = data.len();
+    loop {
+        stream.next_out = buf.as_mut_ptr();
+        stream.avail_out = buf.len();
+        let ret = unsafe {
+            // SAFETY: `stream` was initialized above, `buf` is the in/out
+            // buffer, and all input was handed to the encoder up front; one
+            // `LZMA_FINISH` pass drives it to `LZMA_STREAM_END`.
+            lzma_sys::lzma_code(&mut stream, lzma_sys::LZMA_FINISH)
+        };
+        let used = buf.len() - stream.avail_out;
+        dest.extend_from_slice(&buf[..used]);
+        if ret == lzma_sys::LZMA_STREAM_END {
+            break;
+        }
+        assert_eq!(ret, lzma_sys::LZMA_OK, "lzma compression failed");
+    }
+    unsafe {
+        // SAFETY: frees the internal state allocated by `lzma_stream_encoder`.
+        lzma_sys::lzma_end(&mut stream)
+    };
     dest.into_iter().skip(14).collect()
+}
+
+#[cfg(test)]
+mod lzma_lengths {
+    // Pin the port's lzma/xz compressed lengths (post 14-byte header trim) to
+    // CPython's `lzma.compress(data)[14:]`, which the NCD algorithms measure.
+    #[test]
+    fn matches_cpython_header_trimmed_lengths() {
+        // Observed via CPython 3.x: lzma.compress(x)[14:].
+        let cases: &[(&[u8], usize)] = &[
+            (b"", 18),
+            (b"a", 46),
+            (b"ab", 46),
+            (b"abc", 46),
+            (b"abcdefgh", 50),
+        ];
+        for (data, want) in cases {
+            assert_eq!(super::lzma_compress(data).len(), *want, "lzma length for {data:?}");
+        }
+    }
 }

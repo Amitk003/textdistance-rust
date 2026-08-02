@@ -324,6 +324,8 @@ class Gotoh(NeedlemanWunsch):
 
     def __call__(self, s1: Sequence[T], s2: Sequence[T]) -> float:
         s1, s2 = self._get_sequences(s1, s2)
+        if (len(s1) == 0) != (len(s2) == 0):
+            raise IndexError("index 1 is out of bounds for axis 0 with size 1")
         sim_func = None if self.sim_func is self._ident else self.sim_func
         return _textdistance.gotoh(s1, s2, self.gap_open, self.gap_ext, sim_func)
 

@@ -22,10 +22,13 @@ heavy math runs at native speed.
   word-pair matching and the token similarity ratios), because those are generic glue, not
   heavy math. See DECISIONS D1 and D21.
 - **Verified equivalence.** The original project's own test suite (400 tests) runs unmodified
-  against this port. A differential fuzz harness compares this port against the original
-  Python library over random inputs, covering every exported algorithm (37, including `bag`
-  and `lzma_ncd`); the latest continuous runs covered 1.75 million short and 1.37 million
-  long cases, including lone-surrogate strings across every family, with zero divergence.
+  against this port; together with the port's own tests the suite is 428 green
+  (`pytest -m "not external"`). A differential fuzz harness compares this port against the
+  original Python library over random inputs, covering every exported algorithm (37, including
+  `bag` and `lzma_ncd`). The harness itself was repaired when it was found to be skipping most
+  algorithms (see D23); the latest definitive runs after the repair and the parity fixes are
+  59,000 short and 101,400 long cases with **zero divergence**, in addition to the earlier
+  1.75M/1.37M lone-surrogate runs.
 - **Safety discipline.** The core crate is compiled with `#![forbid(unsafe_code)]`. The FFI
   layer is the only place a boundary is touched, and it stays as small as possible.
 
@@ -79,12 +82,16 @@ Three layers, weakest to strongest:
    with the same command the upstream project uses for its pure tests:
    `pytest -m "not external"` (the `external`-marked tests require optional third-party
    libraries and are excluded upstream too). The port passes the full pure suite:
-   400 of 400 selected tests, with 30 deselected as `external`.
+   400 of 400 selected tests, with 30 deselected as `external`. With the port's own tests
+   (`tests/port/`) the full suite is 428 passed, 30 deselected.
 2. **Differential fuzzing.** `fuzz/` runs the original library and this port on identical
-   random inputs (text, unicode, varying `qval` and `as_set`) and asserts identical outputs.
-   Every exported algorithm is covered; see `fuzz/log-std.txt` and `fuzz/log-long.txt` for
-   the latest continuous runs. The reference checkout (gitignored) is restored at its pinned
-   commit with `scripts/fetch_reference.ps1` (or `.sh`).
+   random inputs (text, unicode, varying `qval` and `as_set`, list/tuple and mixed-element
+   sequences, lone surrogates) and asserts identical outputs. Every exported algorithm is
+   covered; see `fuzz/log-std.txt` and `fuzz/log-long.txt` for the latest runs. The harness
+   was repaired in D23 to actually value-test all 37 algorithms; the parity bugs that repair
+   surfaced (lzma compressed length, strcmp95 scoring, hamming `None` padding, bwtrle on
+   lists) are all fixed, and both modes finish at zero divergence. The reference checkout
+   (gitignored) is restored at its pinned commit with `scripts/fetch_reference.ps1` (or `.sh`).
 3. **Port tests.** `tests/port/` holds additional tests we wrote (native Rust unit tests plus
    adapter-level checks) covering edge cases not exercised upstream.
 4. **Honest-numbers verifiers.** `scripts/honest_report.py` counts `unsafe` blocks per crate
@@ -114,6 +121,10 @@ exercise it, and a few deliberate boundaries are documented rather than silently
   of the package surface; the external-library optimization registry is not bundled (see
   DECISIONS D17 and D18). Both are deliberately absent, matching the original's behavior in a
   clean environment.
+- **Faithful bug reproduction.** `gotoh('', 'x')` and `gotoh('x', '')` raise `IndexError`
+  on both sides: that is a latent bug in the original (it indexes a row/column of a
+  one-row/one-column DP matrix), and the port reproduces it rather than diverging. Both-empty
+  returns 0. The upstream defect is filed separately (DECISIONS D24).
 
 ## Supported algorithms
 

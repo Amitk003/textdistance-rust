@@ -187,22 +187,30 @@ where
             })
         }
         None => Box::new(move |col: &[Option<&Py<PyAny>>]| {
-            let Some(first) = col.first().and_then(|o| o.as_ref()) else {
-                return false;
+            // Mirror the reference `_ident`: every element equals the first.
+            // `zip_longest` pads with `None`, and Rust's `Option` uses `None`
+            // for padding while an actual `None` element arrives as
+            // `Some(py.None())` — Python cannot tell these apart, so both must
+            // compare equal (`None == None` is True upstream). Map padding to
+            // `None` and compare everything through Python `==`.
+            let none = py.None();
+            let first = match col.first() {
+                None => return false,
+                Some(Some(f)) => f.bind(py),
+                Some(None) => none.bind(py),
             };
             for o in col.iter().skip(1) {
-                let ok = match o {
-                    Some(other) => match first.bind(py).eq(other.bind(py)) {
-                        Ok(v) => v,
-                        Err(e) => {
-                            slot.record(e);
-                            false
-                        }
-                    },
-                    None => false,
+                let other = match o {
+                    Some(x) => x.bind(py),
+                    None => none.bind(py),
                 };
-                if !ok {
-                    return false;
+                match first.eq(other) {
+                    Ok(true) => {}
+                    Ok(false) => return false,
+                    Err(e) => {
+                        slot.record(e);
+                        return false;
+                    }
                 }
             }
             true

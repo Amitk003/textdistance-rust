@@ -23,6 +23,11 @@ How the comparison works:
 
 - The original runs in a separate subprocess (via `reference_worker.py`) so both sides can be
   imported without a module clash; the port lives in the parent process.
+- Constructor kwargs are filtered through `inspect.signature` for each algorithm, identically
+  on both sides: the port and the reference are built with the same `qval`/`as_set`/etc. that
+  each algorithm actually accepts. (Previously a single kwargs set was passed to all 37
+  algorithms, and the 28 that reject `as_set` died of `TypeError` at construction and were
+  never value-compared.)
 - Inputs: random text, unicode, varying `qval` (including n-gram edge cases), `as_set`,
   list and tuple sequences, numeric and mixed-element sequences, and lone-surrogate strings
   across every family. Every family processes Python code points (edit, sequence, simple,
@@ -34,9 +39,17 @@ How the comparison works:
   `normalized_similarity`, `maximum`, plus exception behavior (same inputs raise or not).
 - Every batch is serialized to JSON and deserialized identically on both sides, so the port
   and the reference always see byte-identical inputs (JSON collapses `()` and `[]`, so the
-  port must not keep the pre-serialization objects).
+  port must not keep the pre-serialization objects). Numpy repr wrappers
+  (`np.float64(3.0)`, `np.int64(19)`) are stripped when parsing values, and `maximum` is
+  compared as a called value.
 - Float comparison uses a documented tolerance (1e-9); exact-bit equality is the target and
   reprs are compared first, so any near miss within tolerance is reported, never hidden.
+
+The repair above (kwargs filtering) is what surfaced the parity bugs fixed in DECISIONS D23:
+gotoh single-empty `IndexError`, the lzma compressed-length divergence (switched the codec to
+CPython's streaming encoder), strcmp95 scoring, hamming `None`-padding, and bwtrle on
+list/tuple input. The latest definitive runs after those fixes are in `log-std.txt`
+(59,000 cases) and `log-long.txt` (101,400 cases), both **0 divergences**.
 
 Run:
 

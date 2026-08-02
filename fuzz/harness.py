@@ -24,10 +24,12 @@ survive and cover every exported algorithm. --no-logs skips writing for CI.
 """
 
 import argparse
+import inspect
 import json
 import math
 import os
 import random
+import re
 import subprocess
 import sys
 import time
@@ -176,6 +178,12 @@ def random_case_deep(rng):
 def parse_value(raw, path):
     if raw.startswith("__RAISED__:"):
         return ("raised", raw.split(":", 1)[1])
+    # The original returns numpy scalars whose repr wraps the number, e.g.
+    # np.float64(3.0) or np.int64(19). Strip the wrapper so the numeric value
+    # is compared, not the cosmetic repr.
+    m = re.match(r"^(?:np\.)?(?:float64|float32|int64|int32|int16|uint[a-z0-9]*)\((.*)\)$", raw)
+    if m:
+        raw = m.group(1)
     if raw in ("None", "True", "False", "inf", "-inf"):
         return ("num", float(raw.replace("inf", "1e309"))) if raw != "None" else ("none", None)
     if raw.startswith("Fraction("):
@@ -200,6 +208,30 @@ def close_enough(ref_raw, port_raw):
         if abs(a - b) <= TOLERANCE:
             return 1
     return 2
+
+
+def resolve_kwargs(cls, kwargs):
+    """Drop constructor kwargs a given algorithm does not accept.
+
+    Many algorithms reject ``as_set`` (and some reject ``qval``); passing it
+    makes both sides raise TypeError at construction, so the case is never
+    value-compared. Filter to the accepted parameters so every algorithm is
+    genuinely exercised, and apply the exact same filtered dict to the
+    reference so both sides see identical arguments.
+    """
+    try:
+        sig = inspect.signature(cls)
+    except (TypeError, ValueError):
+        return {}
+    params = sig.parameters
+    if any(p.kind == p.VAR_KEYWORD for p in params.values()):
+        return dict(kwargs)
+    allowed = {
+        name
+        for name, p in params.items()
+        if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
+    }
+    return {k: v for k, v in kwargs.items() if k in allowed}
 
 
 def main():
@@ -249,6 +281,12 @@ def main():
     try:
         while True:
             batch = [gen_case(rng) for _ in range(args.batch)]
+            # Filter constructor kwargs to what each algorithm accepts, so every
+            # algorithm is value-tested (previously the 28 that reject as_set
+            # raised at construction and were never compared). Apply the same
+            # filtered dict to the port constructor and to the reference.
+            for c in batch:
+                c["kwargs"] = resolve_kwargs(type(getattr(td_port, c["alg"])), c["kwargs"])
             # Round-trip through JSON so both sides operate on byte-identical
             # deserialized inputs (JSON collapses () and [] into [], so the
             # port must not keep the pre-serialization Python objects).
@@ -284,7 +322,7 @@ def main():
                     except Exception as exc:  # noQA
                         port[name] = "__RAISED__:" + type(exc).__name__
                 try:
-                    port["maximum"] = repr(inst.maximum)
+                    port["maximum"] = repr(inst.maximum(case["s1"], case["s2"]))
                 except Exception as exc:  # noQA
                     port["maximum"] = "__RAISED__:" + type(exc).__name__
 

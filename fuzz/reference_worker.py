@@ -25,7 +25,7 @@ def run_case(cls, kwargs, s1, s2):
         except Exception as exc:  # noQA
             out[name] = "__RAISED__:" + type(exc).__name__
     try:
-        out["maximum"] = repr(inst.maximum)
+        out["maximum"] = repr(inst.maximum(s1, s2))
     except Exception as exc:  # noQA
         out["maximum"] = "__RAISED__:" + type(exc).__name__
     return out
