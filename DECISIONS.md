@@ -228,10 +228,48 @@ a lone surrogate raises `UnicodeEncodeError` on both sides. Behavior is pinned b
 `tests/port/test_surrogates.py`.
 
 Rationale: the upstream compression suite draws lone surrogates via `characters()` and
-expects the pure coders to handle them, so this is exercised behavior, not a corner. The
-edit, sequence, and phonetic kernels compare Rust `char` scalar values, which cannot hold a
-lone surrogate; such an input raises `UnicodeEncodeError` there where the original computes.
-That boundary is deliberate: lone surrogates are malformed data, no upstream test reaches
-those kernels with them (the suite's `characters()` strategies only exercise compression),
-the differential fuzz pool excludes them, and refactoring every DP kernel for invalid
-Unicode is not justified. It is documented here rather than silently accepted.
+expects the pure coders to handle them, so this is exercised behavior, not a corner. At the
+time this entry was written, the edit, sequence, and phonetic kernels compared Rust `char`
+scalar values, which cannot hold a lone surrogate, so such an input raised
+`UnicodeEncodeError` there where the original computes. That boundary was a deliberate,
+documented tradeoff. It has since been closed: every family now processes code points just
+like the compression coders do, so the boundary is gone (see D21).
+
+## D21. The code-point model now spans every family; MLIPNS returns int; verified deviations
+
+Building on D20, the edit, sequence, simple, and phonetic kernels were migrated from Rust
+`&[char]` to `&[u32]` code points. The kernels were already generic over their element type, so
+the change is confined to the FFI layer and the non-generic kernels (StrCmp95 and Editex were
+already `&[u32]`): every string fast path now extracts Unicode code points via
+`seq_to_codepoints` (fast UTF-8, with a Python-semantics fallback for lone surrogates). A lone
+surrogate is now a distinct unit compared unequal to every ASCII character, exactly as in the
+original, and no kernel raises `UnicodeEncodeError` on it. Behavior is pinned by
+`tests/port/test_surrogates_edit_sequence.py`, and the differential fuzz pool was widened to
+draw lone surrogates across every family. See D20.
+
+The migration surfaced one latent, pre-existing divergence unrelated to surrogates: the
+original MLIPNS returns `1` or `0` as an `int` on every path, while the port's two-sequence
+path returned the f64 kernel value. The earlier differential comparisons matched `1.0 == 1`
+numerically, so a type-sensitive check never flagged it. The adapter now narrows the kernel's
+result to `int`, restoring exact return-type parity.
+
+A second, independent finding is the verified Smith-Waterman deviation. The original returns
+the bottom-right cell of its DP matrix (`dist_mat[-1, -1]`) rather than the matrix maximum,
+so it is end-anchored rather than true local alignment: `smith_waterman('ax','xb')` is 0.0 where
+the textbook answer is 1.0. Every one of the five upstream Smith-Waterman tests pins the
+bottom-right values, so this is deliberate, test-pinned behavior, not an accidental bug. The
+port reproduces it bit-for-bit, and because it is faithful to the original (and every
+principle of a behavioral port), it is documented here rather than "fixed": porting means
+preserving the original's behavior, not correcting it.
+
+### Bug Catcher outcome
+
+The completed migration was re-verified by widening the differential fuzz harness to draw lone
+surrogates across every exported algorithm and re-running both mode sets (std 1,746,200 cases
+and long 1,365,400 cases, zero divergences and zero near-misses, all outputs bit-identical),
+plus the earlier 4.69M-case broad hunt with the full 37-algorithm surface. No genuine,
+defensible bug in the original was found. The two candidate findings investigated (the
+Smith-Waterman end-anchoring above, and `jaccard((), []) == 1` versus `jaccard([], []) == 0`
+which follows the documented `quick_answer` ordering) are both faithful to the original and
+to its own tests, so neither is filed as a bug. This outcome is reported honestly rather than
+fabricated: a behavioral port should preserve the original, not manufacture defects in it.

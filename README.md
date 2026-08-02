@@ -14,13 +14,18 @@ heavy math runs at native speed.
 - **Drop-in compatibility.** Import `textdistance`, use the same classes, singletons, and
   methods. `textdistance.levenshtein("test", "text")` works exactly as before, including
   `qval`, `as_set`, `ks`, and custom similarity callables.
-- **Native performance.** Every algorithm is implemented in Rust. The default call path is a
-  single FFI boundary hop into compiled code, not a Python loop.
+- **Native performance.** Every algorithm's core math is implemented in Rust: the edit and
+  sequence dynamic programs, the Jaro/StrCmp95/Editex scoring, the n-gram counters, and the
+  compression coders all run on the native path. A default call crosses the FFI boundary once
+  into a compiled kernel, not a Python loop. A few composition and ratio helpers stay in the
+  thin Python adapter exactly as the original structures them (for example MongeElkan's
+  word-pair matching and the token similarity ratios), because those are generic glue, not
+  heavy math. See DECISIONS D1 and D21.
 - **Verified equivalence.** The original project's own test suite (400 tests) runs unmodified
   against this port. A differential fuzz harness compares this port against the original
   Python library over random inputs, covering every exported algorithm (37, including `bag`
-  and `lzma_ncd`); the latest continuous runs covered 2.76 million short and 1.93 million
-  long cases with zero divergence.
+  and `lzma_ncd`); the latest continuous runs covered 1.75 million short and 1.37 million
+  long cases, including lone-surrogate strings across every family, with zero divergence.
 - **Safety discipline.** The core crate is compiled with `#![forbid(unsafe_code)]`. The FFI
   layer is the only place a boundary is touched, and it stays as small as possible.
 
@@ -93,11 +98,12 @@ The port matches the original everywhere the original's own suite and the differ
 exercise it, and a few deliberate boundaries are documented rather than silently accepted:
 
 - **Lone surrogates.** A Python string can contain a lone surrogate (U+D800..DFFF), which is
-  not valid Unicode text. The pure compression coders process Python code points, so they
-  match the original on such strings. The edit, sequence, and phonetic kernels compare valid
-  Unicode scalar values and raise a clear `UnicodeEncodeError` there; the original would
-  compute. Upstream exercises surrogates only on the compression tests, and the fuzz pool
-  follows that same split. See DECISIONS D20 and `tests/port/test_surrogates.py`.
+  not valid Unicode text but is a valid one-element code point. The port processes strings as
+  Python code points across every family, so a lone surrogate flows through the edit, sequence,
+  simple, and phonetic kernels and the compression coders exactly as the original does, instead
+  of raising. The binary compressors (bz2/zlib/lzma) encode to UTF-8 and raise
+  `UnicodeEncodeError` on both sides, which matches the original. See DECISIONS D20/D21 and
+  `tests/port/test_surrogates*.py`.
 - **Unported drafts.** Upstream `vector_based.py` is a draft that needs numpy and is not part
   of the package surface; the external-library optimization registry is not bundled (see
   DECISIONS D17 and D18). Both are deliberately absent, matching the original's behavior in a
