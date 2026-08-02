@@ -151,7 +151,11 @@ const ALGORITHMS: &[Algo] = &[
     Algo {
         name: "strcmp95",
         family: Family::SimMax1,
-        core: |a, b| edit::strcmp95(a, b, false),
+        core: |a, b| {
+            let au: Vec<u32> = a.iter().map(|c| *c as u32).collect();
+            let bu: Vec<u32> = b.iter().map(|c| *c as u32).collect();
+            edit::strcmp95(&au, &bu, false)
+        },
         prepare: strcmp95_prepare,
     },
     Algo {

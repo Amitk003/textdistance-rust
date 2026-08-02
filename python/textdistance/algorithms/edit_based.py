@@ -390,9 +390,12 @@ class MLIPNS(_BaseSimilarity):
             return result
 
         if len(sequences) == 2:
-            return _textdistance.mlipns(
+            # The original always returns 1 or 0, as ints (the N>2 loop below
+            # does too). The kernel returns the same values as f64; narrow to
+            # int so the return type matches the original exactly.
+            return int(_textdistance.mlipns(
                 sequences[0], sequences[1], self.threshold, self.maxmismatches,
-            )
+            ))
 
         mismatches = 0
         ham = _textdistance.hamming(sequences, False, None)

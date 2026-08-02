@@ -23,8 +23,11 @@ dist/
 # Rust
 target/
 
-# Editors / OS
+# Editor / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local indexing tool artifacts
+.codegraph/

@@ -377,48 +377,50 @@ where
 /// The input strings must already be stripped and uppercased, matching the
 /// upstream `__call__` which does `s1.strip().upper()` in Python. The digit
 /// test uses ASCII digits; upstream uses `str.isdigit()`, which is identical
-/// for every input in the verified suite.
-pub fn strcmp95(s1: &[char], s2: &[char], long_strings: bool) -> f64 {
-    const SP_MX: [(char, char); 36] = [
-        ('A', 'E'),
-        ('A', 'I'),
-        ('A', 'O'),
-        ('A', 'U'),
-        ('B', 'V'),
-        ('E', 'I'),
-        ('E', 'O'),
-        ('E', 'U'),
-        ('I', 'O'),
-        ('I', 'U'),
-        ('O', 'U'),
-        ('I', 'Y'),
-        ('E', 'Y'),
-        ('C', 'G'),
-        ('E', 'F'),
-        ('W', 'U'),
-        ('W', 'V'),
-        ('X', 'K'),
-        ('S', 'Z'),
-        ('X', 'S'),
-        ('Q', 'C'),
-        ('U', 'V'),
-        ('M', 'N'),
-        ('L', 'I'),
-        ('Q', 'O'),
-        ('P', 'R'),
-        ('I', 'J'),
-        ('2', 'Z'),
-        ('5', 'S'),
-        ('8', 'B'),
-        ('1', 'I'),
-        ('1', 'L'),
-        ('0', 'O'),
-        ('0', 'Q'),
-        ('C', 'K'),
-        ('G', 'J'),
+/// for every input in the verified suite. Input is a sequence of Unicode code
+/// points (Python's string model), so a lone surrogate is handled like any
+/// other character, exactly as the original does.
+pub fn strcmp95(s1: &[u32], s2: &[u32], long_strings: bool) -> f64 {
+    const SP_MX: [(u32, u32); 36] = [
+        ('A' as u32, 'E' as u32),
+        ('A' as u32, 'I' as u32),
+        ('A' as u32, 'O' as u32),
+        ('A' as u32, 'U' as u32),
+        ('B' as u32, 'V' as u32),
+        ('E' as u32, 'I' as u32),
+        ('E' as u32, 'O' as u32),
+        ('E' as u32, 'U' as u32),
+        ('I' as u32, 'O' as u32),
+        ('I' as u32, 'U' as u32),
+        ('O' as u32, 'U' as u32),
+        ('I' as u32, 'Y' as u32),
+        ('E' as u32, 'Y' as u32),
+        ('C' as u32, 'G' as u32),
+        ('E' as u32, 'F' as u32),
+        ('W' as u32, 'U' as u32),
+        ('W' as u32, 'V' as u32),
+        ('X' as u32, 'K' as u32),
+        ('S' as u32, 'Z' as u32),
+        ('X' as u32, 'S' as u32),
+        ('Q' as u32, 'C' as u32),
+        ('U' as u32, 'V' as u32),
+        ('M' as u32, 'N' as u32),
+        ('L' as u32, 'I' as u32),
+        ('Q' as u32, 'O' as u32),
+        ('P' as u32, 'R' as u32),
+        ('I' as u32, 'J' as u32),
+        ('2' as u32, 'Z' as u32),
+        ('5' as u32, 'S' as u32),
+        ('8' as u32, 'B' as u32),
+        ('1' as u32, 'I' as u32),
+        ('1' as u32, 'L' as u32),
+        ('0' as u32, 'O' as u32),
+        ('0' as u32, 'Q' as u32),
+        ('C' as u32, 'K' as u32),
+        ('G' as u32, 'J' as u32),
     ];
 
-    let phonetic = |a: char, b: char| a == b || SP_MX.contains(&(a, b)) || SP_MX.contains(&(b, a));
+    let phonetic = |a: u32, b: u32| a == b || SP_MX.contains(&(a, b)) || SP_MX.contains(&(b, a));
 
     let len_s1 = s1.len();
     let len_s2 = s2.len();
@@ -468,7 +470,7 @@ pub fn strcmp95(s1: &[char], s2: &[char], long_strings: bool) -> f64 {
     }
     n_trans /= 2;
 
-    let in_range = |c: char| (c as u32) < 91 && (c as u32) > 0;
+    let in_range = |c: u32| c < 91 && c > 0;
     let mut n_simi = 0i64;
     if minv > num_com {
         for i in 0..len_s1 {
@@ -501,7 +503,7 @@ pub fn strcmp95(s1: &[char], s2: &[char], long_strings: bool) -> f64 {
     let limit = minv.min(4);
     let mut i = 0usize;
     for (sc1, sc2) in s1.iter().zip(s2.iter()) {
-        if i >= limit || sc1 != sc2 || sc1.is_ascii_digit() {
+        if i >= limit || sc1 != sc2 || (0x30u32..=0x39u32).contains(sc1) {
             break;
         }
         i += 1;
@@ -513,7 +515,7 @@ pub fn strcmp95(s1: &[char], s2: &[char], long_strings: bool) -> f64 {
     if !long_strings || minv <= 4 || num_com <= i + 1 || 2 * num_com < minv + i {
         return weight;
     }
-    if s1[0].is_ascii_digit() {
+    if (0x30u32..=0x39u32).contains(&s1[0]) {
         return weight;
     }
     let res = (num_com - i - 1) as f64 / (len_s1 + len_s2 - i * 2 + 2) as f64;
@@ -522,17 +524,17 @@ pub fn strcmp95(s1: &[char], s2: &[char], long_strings: bool) -> f64 {
 }
 
 fn r_cost(
-    x: char,
-    y: char,
+    x: u32,
+    y: u32,
     match_cost: i64,
     group_cost: i64,
     mismatch_cost: i64,
-    groups: &[&[char]],
+    groups: &[&[u32]],
 ) -> i64 {
     if x == y {
         return match_cost;
     }
-    let grouped = |c: char| groups.iter().any(|g| g.contains(&c));
+    let grouped = |c: u32| groups.iter().any(|g| g.contains(&c));
     if !grouped(x) || !grouped(y) {
         return mismatch_cost;
     }
@@ -545,13 +547,13 @@ fn r_cost(
 }
 
 fn d_cost(
-    x: char,
-    y: char,
+    x: u32,
+    y: u32,
     match_cost: i64,
     group_cost: i64,
     mismatch_cost: i64,
-    groups: &[&[char]],
-    ungrouped: &[char],
+    groups: &[&[u32]],
+    ungrouped: &[u32],
 ) -> i64 {
     if x != y && ungrouped.contains(&x) {
         group_cost
@@ -567,21 +569,21 @@ fn d_cost(
 /// builds with a numpy matrix are reproduced here with the same recurrences.
 #[allow(clippy::too_many_arguments)]
 pub fn editex(
-    s1: &[char],
-    s2: &[char],
+    s1: &[u32],
+    s2: &[u32],
     match_cost: i64,
     group_cost: i64,
     mismatch_cost: i64,
     local: bool,
-    groups: &[&[char]],
-    ungrouped: &[char],
+    groups: &[&[u32]],
+    ungrouped: &[u32],
     max_length: i64,
 ) -> i64 {
     let mut sa = Vec::with_capacity(s1.len() + 1);
-    sa.push(' ');
+    sa.push(' ' as u32);
     sa.extend_from_slice(s1);
     let mut sb = Vec::with_capacity(s2.len() + 1);
-    sb.push(' ');
+    sb.push(' ' as u32);
     sb.extend_from_slice(s2);
     let len1 = sa.len() - 1;
     let len2 = sb.len() - 1;
@@ -691,8 +693,8 @@ mod tests {
 
     #[test]
     fn strcmp95_known() {
-        let a: Vec<char> = "MARTHA".chars().collect();
-        let b: Vec<char> = "MARHTA".chars().collect();
+        let a: Vec<u32> = "MARTHA".chars().map(|c| c as u32).collect();
+        let b: Vec<u32> = "MARHTA".chars().map(|c| c as u32).collect();
         let actual = strcmp95(&a, &b, false);
         assert!((actual - 0.9611111111111111).abs() < 1e-9);
     }
@@ -707,22 +709,22 @@ mod tests {
 
     #[test]
     fn editex_known() {
-        let a: Vec<char> = "nelson".to_uppercase().chars().collect();
-        let b: Vec<char> = "neilsen".to_uppercase().chars().collect();
-        let groups: Vec<Vec<char>> = vec![
-            "AEIOUY".chars().collect(),
-            "BP".chars().collect(),
-            "CKQ".chars().collect(),
-            "DT".chars().collect(),
-            "LR".chars().collect(),
-            "MN".chars().collect(),
-            "GJ".chars().collect(),
-            "FPV".chars().collect(),
-            "SXZ".chars().collect(),
-            "CSZ".chars().collect(),
+        let a: Vec<u32> = "nelson".to_uppercase().chars().map(|c| c as u32).collect();
+        let b: Vec<u32> = "neilsen".to_uppercase().chars().map(|c| c as u32).collect();
+        let groups: Vec<Vec<u32>> = vec![
+            "AEIOUY".chars().map(|c| c as u32).collect(),
+            "BP".chars().map(|c| c as u32).collect(),
+            "CKQ".chars().map(|c| c as u32).collect(),
+            "DT".chars().map(|c| c as u32).collect(),
+            "LR".chars().map(|c| c as u32).collect(),
+            "MN".chars().map(|c| c as u32).collect(),
+            "GJ".chars().map(|c| c as u32).collect(),
+            "FPV".chars().map(|c| c as u32).collect(),
+            "SXZ".chars().map(|c| c as u32).collect(),
+            "CSZ".chars().map(|c| c as u32).collect(),
         ];
-        let group_refs: Vec<&[char]> = groups.iter().map(|g| g.as_slice()).collect();
-        let ungrouped: Vec<char> = "HW".chars().collect();
+        let group_refs: Vec<&[u32]> = groups.iter().map(|g| g.as_slice()).collect();
+        let ungrouped: Vec<u32> = "HW".chars().map(|c| c as u32).collect();
         assert_eq!(
             editex(&a, &b, 0, 1, 2, false, &group_refs, &ungrouped, 14),
             2

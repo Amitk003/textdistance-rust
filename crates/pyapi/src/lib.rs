@@ -31,11 +31,6 @@ impl ErrSlot {
     }
 }
 
-fn seq_to_chars(seq: &Bound<'_, PyAny>) -> PyResult<Vec<char>> {
-    let s: String = seq.extract()?;
-    Ok(s.chars().collect())
-}
-
 /// Extract a Python str as a sequence of Unicode code points, including lone
 /// surrogates, which is how Python itself models strings (surrogates are
 /// valid one-element code points). Fast path is UTF-8 extraction; when that
@@ -263,18 +258,18 @@ fn hamming<'py>(
 ) -> PyResult<usize> {
     if test_func.is_none() {
         let mut all_str = true;
-        let mut char_seqs: Vec<Vec<char>> = Vec::new();
+        let mut char_seqs: Vec<Vec<u32>> = Vec::new();
         for item in sequences.try_iter()? {
             let seq = item?;
             if seq.is_instance_of::<PyString>() {
-                char_seqs.push(seq_to_chars(&seq)?);
+                char_seqs.push(seq_to_codepoints(&seq)?);
             } else {
                 all_str = false;
                 break;
             }
         }
         if all_str {
-            let test = |col: &[Option<&char>]| -> bool {
+            let test = |col: &[Option<&u32>]| -> bool {
                 match col.first().and_then(|o| o.as_ref()) {
                     Some(first) => col.iter().all(|o| match o {
                         Some(c) => c == first,
@@ -306,9 +301,9 @@ fn levenshtein<'py>(
     test_func: Option<Bound<'py, PyAny>>,
 ) -> PyResult<usize> {
     if test_func.is_none() && s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let eq = |x: &char, y: &char| x == y;
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let eq = |x: &u32, y: &u32| x == y;
         return Ok(edit::levenshtein(&a, &b, eq));
     }
     let a = seq_to_objects(s1)?;
@@ -332,9 +327,9 @@ fn damerau_levenshtein<'py>(
     if restricted {
         if test_func.is_none() && s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>()
         {
-            let a = seq_to_chars(s1)?;
-            let b = seq_to_chars(s2)?;
-            let eq = |x: &char, y: &char| x == y;
+            let a = seq_to_codepoints(s1)?;
+            let b = seq_to_codepoints(s2)?;
+            let eq = |x: &u32, y: &u32| x == y;
             return Ok(edit::damerau_levenshtein_restricted(&a, &b, eq));
         }
         let a = seq_to_objects(s1)?;
@@ -348,9 +343,9 @@ fn damerau_levenshtein<'py>(
         && s1.is_instance_of::<PyString>()
         && s2.is_instance_of::<PyString>()
     {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let eq = |x: &char, y: &char| x == y;
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let eq = |x: &u32, y: &u32| x == y;
         Ok(edit::damerau_levenshtein_unrestricted(&a, &b, eq))
     } else {
         let a = objects_to_hashkeys(py, seq_to_objects(s1)?)?;
@@ -397,9 +392,9 @@ fn jaro_winkler<'py>(
     winklerize: bool,
 ) -> PyResult<f64> {
     if s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let eq = |x: &char, y: &char| x == y;
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let eq = |x: &u32, y: &u32| x == y;
         return Ok(edit::jaro_winkler(
             &a,
             &b,
@@ -421,8 +416,8 @@ fn jaro_winkler<'py>(
 #[pyfunction]
 #[pyo3(signature = (s1, s2, long_strings=false))]
 fn strcmp95(s1: &Bound<'_, PyAny>, s2: &Bound<'_, PyAny>, long_strings: bool) -> PyResult<f64> {
-    let a = seq_to_chars(s1)?;
-    let b = seq_to_chars(s2)?;
+    let a = seq_to_codepoints(s1)?;
+    let b = seq_to_codepoints(s2)?;
     Ok(edit::strcmp95(&a, &b, long_strings))
 }
 
@@ -436,9 +431,9 @@ fn mlipns<'py>(
     maxmismatches: usize,
 ) -> PyResult<f64> {
     if s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let test = |col: &[Option<&char>]| -> bool {
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let test = |col: &[Option<&u32>]| -> bool {
             match col.first().and_then(|o| o.as_ref()) {
                 Some(first) => col.iter().all(|o| match o {
                     Some(c) => c == first,
@@ -468,9 +463,9 @@ fn needleman_wunsch<'py>(
     sim_func: Option<Bound<'py, PyAny>>,
 ) -> PyResult<f64> {
     if sim_func.is_none() && s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let sim = |x: &char, y: &char| if x == y { 1.0 } else { 0.0 };
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let sim = |x: &u32, y: &u32| if x == y { 1.0 } else { 0.0 };
         return Ok(edit::needleman_wunsch(&a, &b, gap_cost, sim));
     }
     let a = seq_to_objects(s1)?;
@@ -492,9 +487,9 @@ fn smith_waterman<'py>(
     sim_func: Option<Bound<'py, PyAny>>,
 ) -> PyResult<f64> {
     if sim_func.is_none() && s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let sim = |x: &char, y: &char| if x == y { 1.0 } else { 0.0 };
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let sim = |x: &u32, y: &u32| if x == y { 1.0 } else { 0.0 };
         return Ok(edit::smith_waterman(&a, &b, gap_cost, sim));
     }
     let a = seq_to_objects(s1)?;
@@ -517,9 +512,9 @@ fn gotoh<'py>(
     sim_func: Option<Bound<'py, PyAny>>,
 ) -> PyResult<f64> {
     if sim_func.is_none() && s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let sim = |x: &char, y: &char| if x == y { 1.0 } else { 0.0 };
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let sim = |x: &u32, y: &u32| if x == y { 1.0 } else { 0.0 };
         return Ok(edit::gotoh(&a, &b, gap_open, gap_ext, sim));
     }
     let a = seq_to_objects(s1)?;
@@ -531,21 +526,13 @@ fn gotoh<'py>(
     Ok(result)
 }
 
-/// Collect a Python sequence of single-character strings into chars,
-/// silently ignoring entries that are not single characters (upstream group
-/// sets can contain such entries but they can never match a single char).
-fn chars_list(obj: &Bound<'_, PyAny>) -> PyResult<Vec<char>> {
-    let mut out = Vec::new();
-    for item in obj.try_iter()? {
-        let s: String = item?.extract()?;
-        let mut chars = s.chars();
-        if let Some(c) = chars.next() {
-            if chars.next().is_none() {
-                out.push(c);
-            }
-        }
-    }
-    Ok(out)
+/// Turn a single Unicode code point back into a one-character Python str,
+/// including lone surrogates (which Rust cannot represent as a `char`).
+fn codepoint_to_pystr<'py>(py: Python<'py>, cp: u32) -> PyResult<Bound<'py, PyString>> {
+    let builtins = py.import("builtins")?;
+    let chr = builtins.getattr("chr")?;
+    let obj = chr.call1((cp,))?;
+    Ok(obj.cast_into::<PyString>()?)
 }
 
 #[pyfunction]
@@ -562,14 +549,14 @@ fn editex(
     ungrouped: &Bound<'_, PyAny>,
     max_length: i64,
 ) -> PyResult<i64> {
-    let a = seq_to_chars(s1)?;
-    let b = seq_to_chars(s2)?;
-    let mut group_vecs: Vec<Vec<char>> = Vec::new();
+    let a = seq_to_codepoints(s1)?;
+    let b = seq_to_codepoints(s2)?;
+    let mut group_vecs: Vec<Vec<u32>> = Vec::new();
     for item in groups.try_iter()? {
-        group_vecs.push(chars_list(&item?)?);
+        group_vecs.push(seq_to_codepoints(&item?)?);
     }
-    let group_refs: Vec<&[char]> = group_vecs.iter().map(|g| g.as_slice()).collect();
-    let ungrouped_vec = chars_list(ungrouped)?;
+    let group_refs: Vec<&[u32]> = group_vecs.iter().map(|g| g.as_slice()).collect();
+    let ungrouped_vec = seq_to_codepoints(ungrouped)?;
     Ok(edit::editex(
         &a,
         &b,
@@ -592,22 +579,22 @@ fn common_prefix<'py>(
 ) -> PyResult<Bound<'py, PyAny>> {
     if sim_test.is_none() {
         let mut all_str = true;
-        let mut char_seqs: Vec<Vec<char>> = Vec::new();
+        let mut char_seqs: Vec<Vec<u32>> = Vec::new();
         for item in sequences.try_iter()? {
             let seq = item?;
             if seq.is_instance_of::<PyString>() {
-                char_seqs.push(seq_to_chars(&seq)?);
+                char_seqs.push(seq_to_codepoints(&seq)?);
             } else {
                 all_str = false;
                 break;
             }
         }
         if all_str {
-            let test = |x: &char, y: &char| x == y;
+            let test = |x: &u32, y: &u32| x == y;
             let result = simple::common_prefix(&char_seqs, test);
             let list = PyList::empty(py);
             for c in result {
-                list.append(PyString::new(py, &c.to_string()).into_any())?;
+                list.append(codepoint_to_pystr(py, *c)?.into_any())?;
             }
             return Ok(list.into_any());
         }
@@ -645,9 +632,9 @@ fn lcsseq<'py>(
     s2: &Bound<'py, PyAny>,
 ) -> PyResult<Vec<usize>> {
     if s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let eq = |x: &char, y: &char| x == y;
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let eq = |x: &u32, y: &u32| x == y;
         return Ok(sequence::lcsseq(&a, &b, eq));
     }
     let a = seq_to_objects(s1)?;
@@ -668,9 +655,9 @@ fn lcsstr_standard<'py>(
     s2: &Bound<'py, PyAny>,
 ) -> PyResult<(usize, usize)> {
     if s1.is_instance_of::<PyString>() && s2.is_instance_of::<PyString>() {
-        let a = seq_to_chars(s1)?;
-        let b = seq_to_chars(s2)?;
-        let eq = |x: &char, y: &char| x == y;
+        let a = seq_to_codepoints(s1)?;
+        let b = seq_to_codepoints(s2)?;
+        let eq = |x: &u32, y: &u32| x == y;
         return Ok(sequence::lcsstr_standard(&a, &b, eq));
     }
     let a = objects_to_hashkeys(py, seq_to_objects(s1)?)?;
@@ -696,9 +683,9 @@ fn lcsstr_standard<'py>(
 /// mirroring `RatcliffObershelp._find`.
 #[pyfunction]
 fn ratcliff_obershelp_find(sequences: &Bound<'_, PyAny>) -> PyResult<usize> {
-    let mut seqs: Vec<Vec<char>> = Vec::new();
+    let mut seqs: Vec<Vec<u32>> = Vec::new();
     for item in sequences.try_iter()? {
-        seqs.push(seq_to_chars(&item?)?);
+        seqs.push(seq_to_codepoints(&item?)?);
     }
     Ok(sequence::ratcliff_obershelp(&seqs))
 }

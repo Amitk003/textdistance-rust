@@ -105,7 +105,10 @@ where
 }
 
 /// First occurrence of `needle` in `haystack`, or `usize::MAX`.
-fn find_subseq(haystack: &[char], needle: &[char]) -> usize {
+fn find_subseq<T>(haystack: &[T], needle: &[T]) -> usize
+where
+    T: PartialEq,
+{
     if needle.is_empty() {
         return 0;
     }
@@ -125,9 +128,12 @@ fn find_subseq(haystack: &[char], needle: &[char]) -> usize {
 /// Mirrors `LCSStr.__call__`: two sequences under 200 elements use the
 /// difflib-standard path, everything else uses the sliding-window scan of the
 /// shortest sequence.
-fn lcsstr_content(seqs: &[Vec<char>]) -> Vec<char> {
+fn lcsstr_content<T>(seqs: &[Vec<T>]) -> Vec<T>
+where
+    T: Eq + Hash + Clone,
+{
     if seqs.len() == 2 && seqs.iter().map(|s| s.len()).max().unwrap_or(0) < 200 {
-        let (besti, bestsize) = lcsstr_standard(&seqs[0], &seqs[1], |a: &char, b: &char| a == b);
+        let (besti, bestsize) = lcsstr_standard(&seqs[0], &seqs[1], |a: &T, b: &T| a == b);
         return seqs[0][besti..besti + bestsize].to_vec();
     }
     let Some(short) = seqs.iter().min_by_key(|s| s.len()) else {
@@ -146,21 +152,24 @@ fn lcsstr_content(seqs: &[Vec<char>]) -> Vec<char> {
 
 /// Sum of the lengths of the matched blocks in the Ratcliff-Obershelp
 /// recursion, mirroring `RatcliffObershelp._find`.
-pub fn ratcliff_obershelp(seqs: &[Vec<char>]) -> usize {
+pub fn ratcliff_obershelp<T>(seqs: &[Vec<T>]) -> usize
+where
+    T: Eq + Hash + Clone,
+{
     let subseq = lcsstr_content(seqs);
     let length = subseq.len();
     if length == 0 {
         return 0;
     }
     let mut total = length;
-    let before: Vec<Vec<char>> = seqs
+    let before: Vec<Vec<T>> = seqs
         .iter()
         .map(|s| {
             let pos = find_subseq(s, &subseq);
             s[..pos.min(s.len())].to_vec()
         })
         .collect();
-    let after: Vec<Vec<char>> = seqs
+    let after: Vec<Vec<T>> = seqs
         .iter()
         .map(|s| {
             let pos = find_subseq(s, &subseq).min(s.len());
